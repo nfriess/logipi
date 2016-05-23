@@ -9,6 +9,9 @@ http://valentfx.com/logi-pi/
 - **flash_loader**: A utility to load .bit files on the flash
   chip, or read data from the flash chip.
 
+- **i2cslave**: An I2C slave device that can communicate with
+  the Raspberry Pi, implementing a wishbone master in VHDL.
+
 ## License
 
 **Licensed under the GNU GENERAL PUBLIC LICENSE version 2**
