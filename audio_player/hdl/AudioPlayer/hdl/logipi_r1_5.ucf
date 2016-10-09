@@ -140,17 +140,17 @@ NET "PMOD4<7>" 			LOC = "P133" 		| IOSTANDARD = LVTTL;
 #NET "P4_10_LVDS2_N"		LOC = "P133" 		| IOSTANDARD = LVDS_33;
 
 
-# Old board pins
-NET "SYS_SPI_MOSI" 		LOC = "P65" 			| IOSTANDARD = LVTTL;			#! dedicated in R1.5 - buffered to DIN pin for configuration only
-NET "SYS_SPI_MISO" 		LOC = "P75" 			| IOSTANDARD = LVTTL;
-NET "SYS_SPI_SCK" 			LOC = "P70" 		| IOSTANDARD = LVTTL;			#! dedicated pin in R1.5 - buffered to CCLK pin for configuration only
-NET "RP_SPI_CE0N" 			LOC = "P79" 		| IOSTANDARD = LVTTL;
+# Rev 1.0 board pins
+#NET "SYS_SPI_MOSI" 		LOC = "P65" 			| IOSTANDARD = LVTTL;			#! dedicated in R1.5 - buffered to DIN pin for configuration only
+#NET "SYS_SPI_MISO" 		LOC = "P75" 			| IOSTANDARD = LVTTL;
+#NET "SYS_SPI_SCK" 			LOC = "P70" 		| IOSTANDARD = LVTTL;			#! dedicated pin in R1.5 - buffered to CCLK pin for configuration only
+#NET "RP_SPI_CE0N" 			LOC = "P79" 		| IOSTANDARD = LVTTL;
 
 #RASPBERRY-PI CONNECTOR###############################################################
-#NET "SYS_SPI_MOSI" 		LOC = "P80" 			| IOSTANDARD = LVTTL;			#! dedicated in R1.5 - buffered to DIN pin for configuration only
-#NET "SYS_SPI_MISO" 		LOC = "P75" 			| IOSTANDARD = LVTTL;
-#NET "SYS_SPI_SCK" 			LOC = "P78" 		| IOSTANDARD = LVTTL;			#! dedicated pin in R1.5 - buffered to CCLK pin for configuration only
-#NET "RP_SPI_CE0N" 			LOC = "P79" 		| IOSTANDARD = LVTTL;
+NET "SYS_SPI_MOSI" 		LOC = "P80" 			| IOSTANDARD = LVTTL;			#! dedicated in R1.5 - buffered to DIN pin for configuration only
+NET "SYS_SPI_MISO" 		LOC = "P75" 			| IOSTANDARD = LVTTL;
+NET "SYS_SPI_SCK" 			LOC = "P78" 		| IOSTANDARD = LVTTL;			#! dedicated pin in R1.5 - buffered to CCLK pin for configuration only
+NET "RP_SPI_CE0N" 			LOC = "P79" 		| IOSTANDARD = LVTTL;
 #NET "SYS_SDA"				LOC = "P98" 		| IOSTANDARD = LVTTL;			#Shared with Arduino SDA
 #NET "SYS_SCL"				LOC = "P97" 		| IOSTANDARD = LVTTL;			#Shared with Arduino SCL
 #UART FROM RASPBERRY PI - As labelled in the Rpi (master) schematic 
