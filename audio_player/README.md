@@ -86,6 +86,9 @@ These include:
   logipi_r1_5.ucf, spi_wishbone_wrapper.vhd, wishbone_register.vhd:
   From the Logi-PI example code.  Modifed in several places.
 
+* syncflag.vhd, syncsignal.vhd - Based on designs at
+  http://www.fpga4fun.com/CrossClockDomain1.html
+
 * dp_sram.vhd - From opencores.org, GPL license.
 
 
