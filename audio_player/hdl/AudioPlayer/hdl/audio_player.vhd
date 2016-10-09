@@ -607,7 +607,7 @@ ethernet_controller : entity work.ethernet
 
 
 
-i2s_controller : entity work.i2smaster
+dac_controller : entity work.dac_controller
 	port map(
 		sys_clk => sys_clk,
 		sys_reset => cmd_reset_i2s,

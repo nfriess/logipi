@@ -16,7 +16,7 @@ use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
 use IEEE.NUMERIC_STD.ALL;
 
-entity i2smaster is
+entity dac_controller is
     generic (SRAM_ADDR_SIZE : positive := 14);
     Port ( sys_clk : in  STD_LOGIC;
            sys_reset : in  STD_LOGIC;
@@ -53,9 +53,9 @@ entity i2smaster is
 			  dbg_sram_write_addr : out STD_LOGIC_VECTOR(15 downto 0)
 			  
 			  );
-end i2smaster;
+end dac_controller;
 
-architecture Behavioral of i2smaster is
+architecture Behavioral of dac_controller is
 
 	-- 8MB (multiply value by 4 because 32-bit aligned)
 	constant SDRAM_BUFFER_SIZE : std_logic_vector(23 downto 0) := X"200000";
