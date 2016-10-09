@@ -24,7 +24,7 @@ to know are that there are 6 amplifiers (channels), each
 driving a speaker.  The input of an amplifier is an AD1862
 D-to-A, which accepts a 20-bit audio.  The Latch Enable
 pin is driven by a 44.1 KHz clock, which is divided down
-from a standard 16.9344 MHz crystal in the FPGA.
+in the FPGA from a standard 16.9344 MHz crystal oscillator.
 
 ### Host PC
 
