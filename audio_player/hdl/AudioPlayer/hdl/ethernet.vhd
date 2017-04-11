@@ -39,7 +39,7 @@ entity ethernet is
 				
 				cmd_mute : out STD_LOGIC;
 				cmd_pause : out STD_LOGIC;
-				cmd_reset_i2s : out STD_LOGIC;
+				cmd_reset_dac : out STD_LOGIC;
 				
 				
 				dbg_state : out STD_LOGIC_VECTOR(15 downto 0);
@@ -161,7 +161,7 @@ architecture Behavioral of ethernet is
 	constant RX_BUFFER_ADDR : std_logic_vector(15 downto 0) := X"0800"; -- 2K tx, 22K rx
 
 	-- 8MB (multiply value below by 4 because 32-bit aligned)
-	constant SDRAM_BUFFER_SIZE : std_logic_vector(23 downto 0) := X"200000";
+	constant SDRAM_BUFFER_SIZE : std_logic_vector(23 downto 0) := X"080000";
 	
 	type ETHERNET_STATES is (
 		
@@ -456,7 +456,7 @@ begin
 		dhcp_opt_type <= (others => '0');
 		dhcp_opt_len <= (others => '0');
 		dhcp_renew_left <= (others => '0');
-		cmd_reset_i2s <= '1';
+		cmd_reset_dac <= '1';
 		spi_cycle <= '0';
 		spi_strobe <= '0';
 		spi_auto_disable <= '1';
@@ -502,7 +502,7 @@ begin
 	elsif rising_edge(sys_clk) then
 	
 		ten_hz_int_rst <= '0';
-		cmd_reset_i2s <= '0';
+		cmd_reset_dac <= '0';
 		
 		case state is
 		
@@ -1968,7 +1968,7 @@ begin
 				end if;
 				
 				if audio_cmd(8) = '1' then
-					cmd_reset_i2s <= '1';
+					cmd_reset_dac <= '1';
 					sdram_write_ptr <= (others => '0');
 					sdram_complete_ptr <= (others => '0');
 				end if;

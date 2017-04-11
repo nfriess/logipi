@@ -22,18 +22,18 @@ entity dac_controller is
            sys_reset : in  STD_LOGIC;
 			  
            clk16M : in  STD_LOGIC;
-           i2s_clk_oe : in  STD_LOGIC;
+           dac_clk_oe : in  STD_LOGIC;
 			  
-			  i2s_bitclk_o : out   STD_LOGIC;
-			  i2s_lrclk_o : out   STD_LOGIC;
+			  bitclk_o : out   STD_LOGIC;
+			  lrclk_o : out   STD_LOGIC;
 			  
-           i2s_data_left_treb_o : out  STD_LOGIC;
-           i2s_data_left_mid_o : out  STD_LOGIC;
-           i2s_data_left_bass_o : out  STD_LOGIC;
-           i2s_data_right_treb_o : out  STD_LOGIC;
-           i2s_data_right_mid_o : out  STD_LOGIC;
-           i2s_data_right_bass_o : out  STD_LOGIC;
-			  i2s_mute_o : out  STD_LOGIC;
+           dac_left_tweeter_o : out  STD_LOGIC;
+           dac_left_mid_o : out  STD_LOGIC;
+           dac_left_woofer_o : out  STD_LOGIC;
+           dac_right_tweeter_o : out  STD_LOGIC;
+           dac_right_mid_o : out  STD_LOGIC;
+           dac_right_woofer_o : out  STD_LOGIC;
+			  mute_o : out  STD_LOGIC;
 			  
            sdram_cycle : out STD_LOGIC;
            sdram_strobe : out STD_LOGIC;
@@ -57,8 +57,8 @@ end dac_controller;
 
 architecture Behavioral of dac_controller is
 
-	-- 8MB (multiply value by 4 because 32-bit aligned)
-	constant SDRAM_BUFFER_SIZE : std_logic_vector(23 downto 0) := X"200000";
+	-- 2MB (multiply value by 4 because 32-bit aligned)
+	constant SDRAM_BUFFER_SIZE : std_logic_vector(23 downto 0) := X"080000";
 	
 
 	signal sram_read_reset_i : std_logic;
@@ -66,28 +66,28 @@ architecture Behavioral of dac_controller is
 	
 
 	signal clk16M_count : std_logic_vector(8 downto 0);
-	signal i2s_next_read_state : std_logic_vector(8 downto 0);
+	signal next_read_state : std_logic_vector(8 downto 0);
 	
-	signal i2s_lrclk_i : std_logic;
-	signal i2s_bitclk_i : std_logic;
+	signal lrclk_i : std_logic;
+	signal bitclk_i : std_logic;
 	
 	
 
 	signal need_mute : std_logic;
 	
-	signal i2s_left_treb_load_reg : std_logic_vector(19 downto 0);
-	signal i2s_left_mid_load_reg : std_logic_vector(19 downto 0);
-	signal i2s_left_bass_load_reg : std_logic_vector(19 downto 0);
-	signal i2s_right_treb_load_reg : std_logic_vector(19 downto 0);
-	signal i2s_right_mid_load_reg : std_logic_vector(19 downto 0);
-	signal i2s_right_bass_load_reg : std_logic_vector(19 downto 0);
+	signal left_tweeter_load_reg : std_logic_vector(19 downto 0);
+	signal left_mid_load_reg : std_logic_vector(19 downto 0);
+	signal left_woofer_load_reg : std_logic_vector(19 downto 0);
+	signal right_tweeter_load_reg : std_logic_vector(19 downto 0);
+	signal right_mid_load_reg : std_logic_vector(19 downto 0);
+	signal right_woofer_load_reg : std_logic_vector(19 downto 0);
 	
-	signal i2s_left_treb_shift_reg : std_logic_vector(19 downto 0);
-	signal i2s_left_mid_shift_reg : std_logic_vector(19 downto 0);
-	signal i2s_left_bass_shift_reg : std_logic_vector(19 downto 0);
-	signal i2s_right_treb_shift_reg : std_logic_vector(19 downto 0);
-	signal i2s_right_mid_shift_reg : std_logic_vector(19 downto 0);
-	signal i2s_right_bass_shift_reg : std_logic_vector(19 downto 0);
+	signal left_tweeter_shift_reg : std_logic_vector(19 downto 0);
+	signal left_mid_shift_reg : std_logic_vector(19 downto 0);
+	signal left_woofer_shift_reg : std_logic_vector(19 downto 0);
+	signal right_tweeter_shift_reg : std_logic_vector(19 downto 0);
+	signal right_mid_shift_reg : std_logic_vector(19 downto 0);
+	signal right_woofer_shift_reg : std_logic_vector(19 downto 0);
 	
 	signal sram_write_addr : std_logic_vector(SRAM_ADDR_SIZE-1 downto 0) := (others => '0');
 	signal sram_write_addr_16m : std_logic_vector(SRAM_ADDR_SIZE-1 downto 0) := (others => '0');
@@ -110,7 +110,7 @@ architecture Behavioral of dac_controller is
 	
 	signal dbg_count : std_logic_vector(7 downto 0);
 	
-	type I2S_BUFFER_STATES is (
+	type BUFFER_STATES is (
 		INIT, INIT_WAIT_ACK,
 		INIT_SRAM_WRITE, INIT_SRAM_WRITE_DONE,
 		INIT_NEXT_SDRAM_READ, INIT_WAIT_SDRAM_FILL,
@@ -122,7 +122,7 @@ architecture Behavioral of dac_controller is
 		ERROR
 	);
 	
-	signal buffer_state : I2S_BUFFER_STATES := INIT;
+	signal buffer_state : BUFFER_STATES := INIT;
 	
 	signal sram_buffer_empty_16m : std_logic;
 	signal sram_buffer_empty_100m : std_logic;
@@ -138,7 +138,7 @@ begin
 	-- Conditions for when we should output zeros to the DACs (and used for an LED)
 	need_mute <= '1' when cmd_mute = '1' or cmd_pause = '1' or sram_buffer_empty_16m = '1' else '0';
 
-	i2s_mute_o <= need_mute;
+	mute_o <= need_mute;
 	
 	--dbg_sram_read_addr <= "00" & sram_read_addr_100m;
 	dbg_sram_read_addr <= X"0000";
@@ -238,16 +238,16 @@ begin
 	
 	
 	
-	i2s_bitclk_o <= i2s_bitclk_i;
-	i2s_lrclk_o <= i2s_lrclk_i;
+	bitclk_o <= bitclk_i;
+	lrclk_o <= lrclk_i;
 	
 	-- AND gates on the final output data lines to DACs
-	i2s_data_left_treb_o <= '0' when need_mute = '1' else i2s_left_treb_shift_reg(19);
-	i2s_data_left_mid_o <= '0' when need_mute = '1' else i2s_left_mid_shift_reg(19);
-	i2s_data_left_bass_o <= '0' when need_mute = '1' else i2s_left_bass_shift_reg(19);
-	i2s_data_right_treb_o <= '0' when need_mute = '1' else i2s_right_treb_shift_reg(19);
-	i2s_data_right_mid_o <= '0' when need_mute = '1' else i2s_right_mid_shift_reg(19);
-	i2s_data_right_bass_o <= '0' when need_mute = '1' else i2s_right_bass_shift_reg(19);
+	dac_left_tweeter_o <= '0' when need_mute = '1' else left_tweeter_shift_reg(19);
+	dac_left_mid_o <= '0' when need_mute = '1' else left_mid_shift_reg(19);
+	dac_left_woofer_o <= '0' when need_mute = '1' else left_woofer_shift_reg(19);
+	dac_right_tweeter_o <= '0' when need_mute = '1' else right_tweeter_shift_reg(19);
+	dac_right_mid_o <= '0' when need_mute = '1' else right_mid_shift_reg(19);
+	dac_right_woofer_o <= '0' when need_mute = '1' else right_woofer_shift_reg(19);
 	
 
 
@@ -263,24 +263,24 @@ begin
 
 		if sys_reset_16m = '1' then
 			clk16M_count <= (others => '0');
-			i2s_bitclk_i <= '0';
-			i2s_lrclk_i <= '0';
-			i2s_left_treb_shift_reg <= (others => '0');
-			i2s_left_mid_shift_reg <= (others => '0');
-			i2s_left_bass_shift_reg <= (others => '0');
-			i2s_right_treb_shift_reg <= (others => '0');
-			i2s_right_mid_shift_reg <= (others => '0');
-			i2s_right_bass_shift_reg <= (others => '0');
-			i2s_left_treb_load_reg <= (others => '0');
-			i2s_left_mid_load_reg <= (others => '0');
-			i2s_left_bass_load_reg <= (others => '0');
-			i2s_right_treb_load_reg <= (others => '0');
-			i2s_right_mid_load_reg <= (others => '0');
-			i2s_right_bass_load_reg <= (others => '0');
+			bitclk_i <= '0';
+			lrclk_i <= '0';
+			left_tweeter_shift_reg <= (others => '0');
+			left_mid_shift_reg <= (others => '0');
+			left_woofer_shift_reg <= (others => '0');
+			right_tweeter_shift_reg <= (others => '0');
+			right_mid_shift_reg <= (others => '0');
+			right_woofer_shift_reg <= (others => '0');
+			left_tweeter_load_reg <= (others => '0');
+			left_mid_load_reg <= (others => '0');
+			left_woofer_load_reg <= (others => '0');
+			right_tweeter_load_reg <= (others => '0');
+			right_mid_load_reg <= (others => '0');
+			right_woofer_load_reg <= (others => '0');
 			sram_read <= '0';
 			sram_read_addr <= (others => '1');
 			sram_buff_need_more_16_i <= '0';
-			i2s_next_read_state <= std_logic_vector(to_unsigned(272, i2s_next_read_state'length));
+			next_read_state <= std_logic_vector(to_unsigned(272, next_read_state'length));
 		elsif rising_edge(clk16M) then
 			
 			sram_buff_need_more_16_i <= '0';
@@ -293,33 +293,33 @@ begin
 			
 			-- bitclk
 			if (clk16M_count(3 downto 0) = 0) then
-				i2s_bitclk_i <= '0';
+				bitclk_i <= '0';
 			end if;
 			if (clk16M_count(3 downto 0) = 8) then
-				i2s_bitclk_i <= '1';
+				bitclk_i <= '1';
 			end if;
 			
 			-- lrclk
 			if (clk16M_count = 192) then
-				i2s_lrclk_i <= '1';
+				lrclk_i <= '1';
 			end if;
 			if (clk16M_count = 0) then
-				i2s_lrclk_i <= '0';
+				lrclk_i <= '0';
 			end if;
 			
 			-- Held in synchronous 'reset' state by the other state machine below
 			if sram_read_reset_o = '1' then
 				
-				i2s_left_treb_shift_reg <= (others => '0');
-				i2s_right_treb_shift_reg <= (others => '0');
-				i2s_left_mid_shift_reg <= (others => '0');
-				i2s_right_mid_shift_reg <= (others => '0');
-				i2s_left_bass_shift_reg <= (others => '0');
-				i2s_right_bass_shift_reg <= (others => '0');
+				left_tweeter_shift_reg <= (others => '0');
+				right_tweeter_shift_reg <= (others => '0');
+				left_mid_shift_reg <= (others => '0');
+				right_mid_shift_reg <= (others => '0');
+				left_woofer_shift_reg <= (others => '0');
+				right_woofer_shift_reg <= (others => '0');
 				
 				sram_read <= '0';
 				sram_read_addr <= (others => '1');
-				i2s_next_read_state <= std_logic_vector(to_unsigned(272, i2s_next_read_state'length));
+				next_read_state <= std_logic_vector(to_unsigned(272, next_read_state'length));
 				
 			else
 			
@@ -331,12 +331,12 @@ begin
 					or clk16M_count = 288 or clk16M_count = 304 or clk16M_count = 320
 					or clk16M_count = 336 or clk16M_count = 352 or clk16M_count = 368 then
 					
-					i2s_left_treb_shift_reg(19 downto 0) <= i2s_left_treb_shift_reg(18 downto 0) & "0";
-					i2s_left_mid_shift_reg(19 downto 0) <= i2s_left_mid_shift_reg(18 downto 0) & "0";
-					i2s_left_bass_shift_reg(19 downto 0) <= i2s_left_bass_shift_reg(18 downto 0) & "0";
-					i2s_right_treb_shift_reg(19 downto 0) <= i2s_right_treb_shift_reg(18 downto 0) & "0";
-					i2s_right_mid_shift_reg(19 downto 0) <= i2s_right_mid_shift_reg(18 downto 0) & "0";
-					i2s_right_bass_shift_reg(19 downto 0) <= i2s_right_bass_shift_reg(18 downto 0) & "0";
+					left_tweeter_shift_reg(19 downto 0) <= left_tweeter_shift_reg(18 downto 0) & "0";
+					left_mid_shift_reg(19 downto 0) <= left_mid_shift_reg(18 downto 0) & "0";
+					left_woofer_shift_reg(19 downto 0) <= left_woofer_shift_reg(18 downto 0) & "0";
+					right_tweeter_shift_reg(19 downto 0) <= right_tweeter_shift_reg(18 downto 0) & "0";
+					right_mid_shift_reg(19 downto 0) <= right_mid_shift_reg(18 downto 0) & "0";
+					right_woofer_shift_reg(19 downto 0) <= right_woofer_shift_reg(18 downto 0) & "0";
 					
 				end if;
 				
@@ -345,19 +345,19 @@ begin
 				-- zeros to be shifted in at first rather than repeating the MSB
 				
 				if clk16M_count = 0 then
-					i2s_left_treb_shift_reg <= i2s_left_treb_load_reg;
-					i2s_right_treb_shift_reg <= i2s_right_treb_load_reg;
-					i2s_left_mid_shift_reg <= i2s_left_mid_load_reg;
-					i2s_right_mid_shift_reg <= i2s_right_mid_load_reg;
-					i2s_left_bass_shift_reg <= i2s_left_bass_load_reg;
-					i2s_right_bass_shift_reg <= i2s_right_bass_load_reg;
+					left_tweeter_shift_reg <= left_tweeter_load_reg;
+					right_tweeter_shift_reg <= right_tweeter_load_reg;
+					left_mid_shift_reg <= left_mid_load_reg;
+					right_mid_shift_reg <= right_mid_load_reg;
+					left_woofer_shift_reg <= left_woofer_load_reg;
+					right_woofer_shift_reg <= right_woofer_load_reg;
 				end if;
 				
-				if cmd_pause_16m = '0' and sram_buffer_empty_16m = '0' and clk16M_count = i2s_next_read_state then
+				if cmd_pause_16m = '0' and sram_buffer_empty_16m = '0' and clk16M_count = next_read_state then
 					
-					i2s_next_read_state <= i2s_next_read_state + 16;
-					if i2s_next_read_state = 368 then
-						i2s_next_read_state <= std_logic_vector(to_unsigned(272, i2s_next_read_state'length));
+					next_read_state <= next_read_state + 16;
+					if next_read_state = 368 then
+						next_read_state <= std_logic_vector(to_unsigned(272, next_read_state'length));
 					end if;
 					
 					
@@ -386,27 +386,27 @@ begin
 					
 					if clk16M_count = 288 then
 						
-						i2s_left_treb_load_reg <= sram_data_out(19 downto 0);
+						left_woofer_load_reg <= sram_data_out(23 downto 4);
 						
 					elsif clk16M_count = 304 then
 						
-						i2s_right_treb_load_reg <= sram_data_out(19 downto 0);
+						right_woofer_load_reg <= sram_data_out(23 downto 4);
 						
 					elsif clk16M_count = 320 then
 						
-						i2s_left_mid_load_reg <= sram_data_out(19 downto 0);
+						left_mid_load_reg <= sram_data_out(23 downto 4);
 						
 					elsif clk16M_count = 336 then
 						
-						i2s_right_mid_load_reg <= sram_data_out(19 downto 0);
+						right_mid_load_reg <= sram_data_out(23 downto 4);
 						
 					elsif clk16M_count = 352 then
 						
-						i2s_left_bass_load_reg <= sram_data_out(19 downto 0);
+						left_tweeter_load_reg <= sram_data_out(23 downto 4);
 						
 					elsif clk16M_count = 368 then
 					
-						i2s_right_bass_load_reg <= sram_data_out(19 downto 0);
+						right_tweeter_load_reg <= sram_data_out(23 downto 4);
 						
 					end if;
 				
