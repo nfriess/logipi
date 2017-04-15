@@ -413,6 +413,11 @@ architecture Behavioral of ethernet is
 	
 	--signal dbg_ip_hdr_data : std_logic_vector(255 downto 0);
 	
+	
+	-- Next sample received is the beginning of a frame
+	signal start_of_frame : std_logic;
+	
+	
 begin
 
 	led_o <= blink_counter(25) when have_error = '1' else
@@ -499,6 +504,7 @@ begin
 		dbg_skip_fragment <= (others => '0');
 		dbg_skip_sequence <= (others => '0');
 		--dbg_ip_hdr_data <= (others => '0');
+		start_of_frame <= '1';
 	elsif rising_edge(sys_clk) then
 	
 		ten_hz_int_rst <= '0';
@@ -1934,11 +1940,13 @@ begin
 				-- TODO: Stop command to empty buffer immediately?
 				
 				-- data(31) => '1' means no audio samples
-				-- data(8) => '1' means reset i2s controller (sdram buffer is ignored)
+				-- data(8) => '1' means reset dac controller (sdram buffer is ignored)
 				-- data(1) => '1' means a new data stream, so reset seq
 				-- data(0) => '1' means mute on, '0' means mute off
 				
 				audio_cmd <= spi_readdata;
+				
+				start_of_frame <= start_of_frame or spi_readdata(1);
 				
 				-- 4 bytes for command
 				len_remaining <= len_remaining - 4;
@@ -2074,9 +2082,14 @@ begin
 				
 					sdram_cycle_s <= '1';
 					sdram_strobe_s <= '1';
-					sdram_writedata_reg <= X"00" & spi_readdata(23 downto 0);
+					
+					-- Also pass sequence start of frame to dac controller to sync the beginning of a frame
+					sdram_writedata_reg <= start_of_frame & "0000000" & spi_readdata(23 downto 0);
 					
 					state <= RX_AUDIO_DATA_WAIT_SDRAM;
+					
+					-- No longer the first sample in a frame
+					start_of_frame <= '0';
 					
 				else
 					
@@ -2086,7 +2099,9 @@ begin
 
 					sdram_cycle_s <= '1';
 					sdram_strobe_s <= '1';
-					sdram_writedata_reg <= X"00" & spi_readdata(23 downto 0);
+					
+					-- Also pass sequence start of frame to dac controller to sync the beginning of a frame
+					sdram_writedata_reg <= start_of_frame & "0000000" & spi_readdata(23 downto 0);
 					
 					-- Start another read from ethernet
 					
@@ -2105,6 +2120,9 @@ begin
 					
 					next_state <= RX_AUDIO_DATA_WAIT_SDRAM;
 					state <= STARTSPI;
+					
+					-- No longer the first sample in a frame
+					start_of_frame <= '0';
 					
 				end if;
 				
@@ -2281,13 +2299,19 @@ begin
 				if inter_packet_data_len = "01" then
 
 					len_remaining <= len_remaining - 2; -- == len - (3 - inter_packet_data_len)
-					sdram_writedata_reg <= X"FF" & inter_packet_data_reg(15 downto 8) & spi_readdata(15 downto 0);
+					sdram_writedata_reg <= start_of_frame & "0000000" & inter_packet_data_reg(15 downto 8) & spi_readdata(15 downto 0);
 
+					-- No longer the first sample in a frame
+					start_of_frame <= '0';
+					
 				else -- "10"
 
 					len_remaining <= len_remaining - 1; -- == len - (3 - inter_packet_data_len)
-					sdram_writedata_reg <= X"CC" & inter_packet_data_reg(15 downto 0) & spi_readdata(7 downto 0);
+					sdram_writedata_reg <= start_of_frame & "0000000" & inter_packet_data_reg(15 downto 0) & spi_readdata(7 downto 0);
 
+					-- No longer the first sample in a frame
+					start_of_frame <= '0';
+					
 				end if;
 
 				-- Start another read from ethernet

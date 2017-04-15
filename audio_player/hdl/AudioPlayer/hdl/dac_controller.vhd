@@ -66,7 +66,6 @@ architecture Behavioral of dac_controller is
 	
 
 	signal clk16M_count : std_logic_vector(8 downto 0);
-	signal next_read_state : std_logic_vector(8 downto 0);
 	
 	signal lrclk_i : std_logic;
 	signal bitclk_i : std_logic;
@@ -123,6 +122,16 @@ architecture Behavioral of dac_controller is
 	);
 	
 	signal buffer_state : BUFFER_STATES := INIT;
+	
+	
+	type DAC_REG is (
+		LEFT_WOOFER, RIGHT_WOOFER,
+		LEFT_MIDRANGE, RIGHT_MIDRANGE,
+		LEFT_TWEETER, RIGHT_TWEETER
+	);
+	
+	signal next_dac_load_reg : DAC_REG := LEFT_WOOFER;
+	
 	
 	signal sram_buffer_empty_16m : std_logic;
 	signal sram_buffer_empty_100m : std_logic;
@@ -280,8 +289,11 @@ begin
 			sram_read <= '0';
 			sram_read_addr <= (others => '1');
 			sram_buff_need_more_16_i <= '0';
-			next_read_state <= std_logic_vector(to_unsigned(272, next_read_state'length));
+			next_dac_load_reg <= LEFT_WOOFER;
 		elsif rising_edge(clk16M) then
+			
+			-- By default don't read from SRAM
+			sram_read <= '0';
 			
 			sram_buff_need_more_16_i <= '0';
 			
@@ -310,20 +322,19 @@ begin
 			-- Held in synchronous 'reset' state by the other state machine below
 			if sram_read_reset_o = '1' then
 				
-				left_tweeter_shift_reg <= (others => '0');
-				right_tweeter_shift_reg <= (others => '0');
-				left_mid_shift_reg <= (others => '0');
-				right_mid_shift_reg <= (others => '0');
 				left_woofer_shift_reg <= (others => '0');
 				right_woofer_shift_reg <= (others => '0');
+				left_mid_shift_reg <= (others => '0');
+				right_mid_shift_reg <= (others => '0');
+				left_tweeter_shift_reg <= (others => '0');
+				right_tweeter_shift_reg <= (others => '0');
 				
 				sram_read <= '0';
 				sram_read_addr <= (others => '1');
-				next_read_state <= std_logic_vector(to_unsigned(272, next_read_state'length));
 				
 			else
 			
-				-- Shift registers
+				-- Shift register shifts on falling edge of bitclk
 				if clk16M_count = 80 or clk16M_count = 96 or clk16M_count = 112 or clk16M_count = 128
 					or clk16M_count = 144 or clk16M_count = 160 or clk16M_count = 176
 					or clk16M_count = 192 or clk16M_count = 208 or clk16M_count = 224
@@ -331,86 +342,89 @@ begin
 					or clk16M_count = 288 or clk16M_count = 304 or clk16M_count = 320
 					or clk16M_count = 336 or clk16M_count = 352 or clk16M_count = 368 then
 					
-					left_tweeter_shift_reg(19 downto 0) <= left_tweeter_shift_reg(18 downto 0) & "0";
-					left_mid_shift_reg(19 downto 0) <= left_mid_shift_reg(18 downto 0) & "0";
 					left_woofer_shift_reg(19 downto 0) <= left_woofer_shift_reg(18 downto 0) & "0";
-					right_tweeter_shift_reg(19 downto 0) <= right_tweeter_shift_reg(18 downto 0) & "0";
-					right_mid_shift_reg(19 downto 0) <= right_mid_shift_reg(18 downto 0) & "0";
 					right_woofer_shift_reg(19 downto 0) <= right_woofer_shift_reg(18 downto 0) & "0";
+					left_mid_shift_reg(19 downto 0) <= left_mid_shift_reg(18 downto 0) & "0";
+					right_mid_shift_reg(19 downto 0) <= right_mid_shift_reg(18 downto 0) & "0";
+					left_tweeter_shift_reg(19 downto 0) <= left_tweeter_shift_reg(18 downto 0) & "0";
+					right_tweeter_shift_reg(19 downto 0) <= right_tweeter_shift_reg(18 downto 0) & "0";
 					
-				end if;
+				end if; -- Shift registers
+				
+				
+				-- Generate SRAM read signal and increment read address
+				if cmd_pause_16m = '0' and sram_buffer_empty_16m = '0' and clk16M_count < 6 then
+					
+					-- Get next data from sram
+					sram_read_addr <= sram_read_addr + 1;
+					sram_read <= '1';
+					
+					-- TODO: this could be signaled one cycle earlier, considering the addr+1 above
+					--if sram_read_addr(SRAM_ADDR_SIZE-2 downto 0) = std_logic_vector(to_unsigned(0, SRAM_ADDR_SIZE-1)) then
+					if sram_read_addr(SRAM_ADDR_SIZE-2 downto 0) = X"0000" then
+						sram_buff_need_more_16_i <= '1';
+					end if;
+						
+				end if; -- SRAM read strobe and address
+				
+				
+				-- Capture output of SRAM
+				if cmd_pause_16m = '0' and sram_buffer_empty_16m = '0' and clk16M_count > 0 and clk16M_count < 7 then
+					
+					if next_dac_load_reg = LEFT_WOOFER or sram_data_out(31) = '1' then
+						
+						left_woofer_load_reg <= sram_data_out(23 downto 4);
+						next_dac_load_reg <= RIGHT_WOOFER;
+						
+						-- When this state machine first starts, it will read SRAM address zero
+						-- where the left woofer sample should be stored.  The line below will
+						-- have no effect because count will be set to 2 as well.
+						-- If the state machine below and this one get out of sync, then
+						-- this line will force this state machine to get back in sync.
+						clk16M_count <= std_logic_vector(to_unsigned(2, clk16M_count'length));
+					
+					elsif next_dac_load_reg = RIGHT_WOOFER then
+						
+						right_woofer_load_reg <= sram_data_out(23 downto 4);
+						next_dac_load_reg <= LEFT_MIDRANGE;
+					
+					elsif next_dac_load_reg = LEFT_MIDRANGE then
+						
+						left_mid_load_reg <= sram_data_out(23 downto 4);
+						next_dac_load_reg <= RIGHT_MIDRANGE;
+					
+					elsif next_dac_load_reg = RIGHT_MIDRANGE then
+						
+						right_mid_load_reg <= sram_data_out(23 downto 4);
+						next_dac_load_reg <= LEFT_TWEETER;
+					
+					elsif next_dac_load_reg = LEFT_TWEETER then
+						
+						left_tweeter_load_reg <= sram_data_out(23 downto 4);
+						next_dac_load_reg <= RIGHT_TWEETER;
+					
+					elsif next_dac_load_reg = RIGHT_TWEETER then
+						
+						right_tweeter_load_reg <= sram_data_out(23 downto 4);
+						next_dac_load_reg <= LEFT_WOOFER;
+					
+					end if;
+					
+				end if; -- SRAM read capture
 				
 				
 				-- Load shift registers.  Could also be state 64, which would cause
 				-- zeros to be shifted in at first rather than repeating the MSB
-				
-				if clk16M_count = 0 then
-					left_tweeter_shift_reg <= left_tweeter_load_reg;
-					right_tweeter_shift_reg <= right_tweeter_load_reg;
-					left_mid_shift_reg <= left_mid_load_reg;
-					right_mid_shift_reg <= right_mid_load_reg;
+				if clk16M_count = 7 then
+					
 					left_woofer_shift_reg <= left_woofer_load_reg;
 					right_woofer_shift_reg <= right_woofer_load_reg;
+					left_mid_shift_reg <= left_mid_load_reg;
+					right_mid_shift_reg <= right_mid_load_reg;
+					left_tweeter_shift_reg <= left_tweeter_load_reg;
+					right_tweeter_shift_reg <= right_tweeter_load_reg;
+					
 				end if;
-				
-				if cmd_pause_16m = '0' and sram_buffer_empty_16m = '0' and clk16M_count = next_read_state then
-					
-					next_read_state <= next_read_state + 16;
-					if next_read_state = 368 then
-						next_read_state <= std_logic_vector(to_unsigned(272, next_read_state'length));
-					end if;
-					
-					
-					-- Generate SRAM read signal and increment read address
-					if clk16M_count = 272 or clk16M_count = 288 or clk16M_count = 304
-						or clk16M_count = 320 or clk16M_count = 336 or clk16M_count = 352 then
-						
-						-- Get next data from sram
-						sram_read_addr <= sram_read_addr + 1;
-						sram_read <= '1';
-						
-						-- TODO: this could be signaled one cycle earlier, considering the addr+1 above
-						--if sram_read_addr(SRAM_ADDR_SIZE-2 downto 0) = std_logic_vector(to_unsigned(0, SRAM_ADDR_SIZE-1)) then
-						if sram_read_addr(SRAM_ADDR_SIZE-2 downto 0) = X"0000" then
-							sram_buff_need_more_16_i <= '1';
-						end if;
-						
-					else
-						
-						-- Stop read
-						sram_read <= '0';
-						
-					end if;
-					
-					-- Capture output of SRAM.  These are bitclk falling states.
-					
-					if clk16M_count = 288 then
-						
-						left_woofer_load_reg <= sram_data_out(23 downto 4);
-						
-					elsif clk16M_count = 304 then
-						
-						right_woofer_load_reg <= sram_data_out(23 downto 4);
-						
-					elsif clk16M_count = 320 then
-						
-						left_mid_load_reg <= sram_data_out(23 downto 4);
-						
-					elsif clk16M_count = 336 then
-						
-						right_mid_load_reg <= sram_data_out(23 downto 4);
-						
-					elsif clk16M_count = 352 then
-						
-						left_tweeter_load_reg <= sram_data_out(23 downto 4);
-						
-					elsif clk16M_count = 368 then
-					
-						right_tweeter_load_reg <= sram_data_out(23 downto 4);
-						
-					end if;
-				
-				end if; -- count == next_read_state
 				
 			end if; -- not read_reset
 			

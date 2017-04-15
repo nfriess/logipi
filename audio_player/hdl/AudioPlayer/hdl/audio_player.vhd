@@ -647,22 +647,12 @@ dac_controller : entity work.dac_controller
 PMOD4(0) <= dac_lrclk_o;
 PMOD4(1) <= dac_bitclk_o;
 
--- This is what we want ideally, but for some reason these are mixed up
---PMOD3(0) <= dac_left_woofer_data; -- R T
---PMOD3(1) <= dac_right_woofer_data; -- L W
---PMOD3(2) <= dac_left_mid_data; -- R W
---PMOD3(3) <= dac_right_mid_data; -- L M
---PMOD3(6) <= dac_left_tweeter_data;
---PMOD3(7) <= dac_right_tweeter_data;
-
--- This is what actually creates the above setup, where tweeters are on the last pins
-PMOD3(0) <= dac_right_woofer_data;
-PMOD3(1) <= dac_left_mid_data;
-PMOD3(2) <= dac_right_mid_data;
-PMOD3(4) <= dac_left_tweeter_data;
-PMOD3(6) <= dac_right_tweeter_data;
-PMOD3(7) <= dac_left_woofer_data;
-
+PMOD3(0) <= dac_left_woofer_data;
+PMOD3(1) <= dac_right_woofer_data;
+PMOD3(2) <= dac_left_mid_data;
+PMOD3(3) <= dac_right_mid_data;
+PMOD3(6) <= dac_left_tweeter_data;
+PMOD3(7) <= dac_right_tweeter_data;
 
 -- PMOD1_10_ARD_D5
 BUFG_16m : BUFG port map (O => clk16M,    I => PMOD1(7));
