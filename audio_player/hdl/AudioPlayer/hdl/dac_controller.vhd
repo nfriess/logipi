@@ -132,11 +132,12 @@ architecture Behavioral of dac_controller is
 	
 	signal next_dac_load_reg : DAC_REG := LEFT_WOOFER;
 	
+	signal sample_count_in_frame : integer range 0 to 7;
+	
 	
 	signal sram_buffer_empty_16m : std_logic;
 	signal sram_buffer_empty_100m : std_logic;
 	
-	signal sys_reset_16m : std_logic;
 	signal cmd_pause_16m : std_logic;
 	
 	signal sys_clk_slow : std_logic;
@@ -187,14 +188,6 @@ begin
 			sram_write_addr_16m <= sram_write_addr;
 		end if;
 	end process;
-
-	syncsignal_sys_reset_16m : entity work.syncsignal
-	port map(
-		target_clk => clk16M,
-		sys_reset => sys_reset,
-		sig_i => sys_reset,
-		sig_o => sys_reset_16m
-	);
 
 	syncsignal_cmd_pause_16m : entity work.syncsignal
 	port map(
@@ -267,10 +260,10 @@ begin
 	-- 2. Reads data from SRAM and loads in to shift registers at the right time
 	-- 3. Shifts data out of shift registers in synch with bitclk and lrclk
 	-- 
-	process(clk16M, sys_reset_16m)
+	process(clk16M, sys_reset)
 	begin
 
-		if sys_reset_16m = '1' then
+		if sys_reset = '1' then
 			clk16M_count <= (others => '0');
 			bitclk_i <= '0';
 			lrclk_i <= '0';
@@ -454,6 +447,7 @@ begin
 			sram_read_reset_i <= '1';
 			sram_buff_need_more_rst <= '0';
 			dbg_count <= (others => '0');
+			sample_count_in_frame <= 0;
 		elsif rising_edge(sys_clk) then
 			
 			sram_buff_need_more_rst <= '0';
@@ -506,9 +500,22 @@ begin
 						sdram_read_ptr <= X"000000";
 					end if;
 					
+					sram_write <= '1';
+					
 					sram_data_in <= sdram_data_reg;
 					
-					sram_write <= '1';
+					-- SDRAM(31) is set at the start of the data stream, so update
+					-- our sample_count to match.
+					-- Likewise, when sample_count is zero we set SRAM(31) so that
+					-- the reader state machine can sync to the left woofer register
+					if sdram_data_reg(31) = '1' or sample_count_in_frame = 0 then
+						sample_count_in_frame <= 1;
+						sram_data_in(31) <= '1';
+					elsif sample_count_in_frame = 5 then
+						sample_count_in_frame <= 0;
+					else
+						sample_count_in_frame <= sample_count_in_frame + 1;
+					end if;
 					
 					buffer_state <= INIT_SRAM_WRITE_DONE;
 					
@@ -596,16 +603,12 @@ begin
 					end if;
 					
 					if sdram_timeout_counter = X"FF" then
-						-- TODO
-					end if;
-					
-					if sram_buffer_empty_100m = '1' then
 						sram_read_reset_i <= '1';
 						sdram_cycle <= '0';
 						sdram_strobe <= '0';
 						buffer_state <= INIT;
 					end if;
-		
+					
 				when SDRAM_HAVE_ACK =>
 					dbg_state(11 downto 8) <= X"C";
 					
@@ -619,8 +622,22 @@ begin
 						sdram_read_ptr <= X"000000";
 					end if;
 					
-					sram_data_in <= sdram_data_reg;
 					sram_write <= '1';
+					
+					sram_data_in <= sdram_data_reg;
+					
+					-- SDRAM(31) is set at the start of the data stream, so update
+					-- our sample_count to match.
+					-- Likewise, when sample_count is zero we set SRAM(31) so that
+					-- the reader state machine can sync to the left woofer register
+					if sdram_data_reg(31) = '1' or sample_count_in_frame = 0 then
+						sample_count_in_frame <= 1;
+						sram_data_in(31) <= '1';
+					elsif sample_count_in_frame = 5 then
+						sample_count_in_frame <= 0;
+					else
+						sample_count_in_frame <= sample_count_in_frame + 1;
+					end if;
 					
 					buffer_state <= SRAM_WRITE_DONE;
 					
@@ -641,7 +658,11 @@ begin
 						buffer_state <= IDLE;
 						
 					else
+						
+						sdram_timeout_counter <= (others => '0');
+						
 						buffer_state <= SDRAM_NOT_EMPTY;
+						
 					end if;
 					
 				when SDRAM_NOT_EMPTY =>
@@ -652,11 +673,16 @@ begin
 					
 					if sdram_buffer_empty = '0' then
 						buffer_state <= SDRAM_START_READ;
+					else
+						-- Release SDRAM so it can be filled again
+						sdram_cycle <= '0';
 					end if;
 					
-					if sram_buffer_empty_100m = '1' then
-						sram_read_reset_i <= '1';
-						sdram_cycle <= '0';
+					sdram_timeout_counter <= sdram_timeout_counter + 1;
+
+					-- If SDRAM doesn't fill in time then abort
+					-- and fill SRAM with zeros
+					if sdram_timeout_counter = X"FF" then
 						buffer_state <= INIT;
 					end if;
 					
