@@ -164,13 +164,14 @@ architecture Behavioral of audio_player is
 	-- Misc signals
 	signal reg_cs : std_logic ;
 	
-	signal zzdummy0, zzdummy1, zzdummy2, zzdummy3, zzdummy4, zzdummy5, zzdummy6, zzdummy7, zzdummy8, zzdummy9, zzdummy10, zzdummy11, zzdummy12, zzdummy13, zzdummy14, zzdummy15, zzdummy16, zzdummy17, zzdummy18, zzdummy19, zzdummy20, zzdummy21 : std_logic_vector(15 downto 0);
+	signal zzdummy0, zzdummy1, zzdummy2, zzdummy3, zzdummy4, zzdummy5, zzdummy6, zzdummy7, zzdummy8, zzdummy9, zzdummy10, zzdummy11, zzdummy12, zzdummy13, zzdummy14, zzdummy15, zzdummy16, zzdummy17, zzdummy18, zzdummy19, zzdummy20, zzdummy21, zzdummy22 : std_logic_vector(15 downto 0);
 	
 	-- registers signals
 	signal reg_sdram_data_o, reg_sdram_data_i, reg_sdram_addr_h, reg_sdram_addr_l, reg_sdram_ctl_o, reg_sdram_ctl_i : std_logic_vector(15 downto 0);
 	signal dbg_eth_state, dbg_dac_state, dbg_sdram_bus_state, dbg_eth_rx_current_packet, dbg_eth_rx_next_packet : std_logic_vector(15 downto 0);
 	signal dbg_eth_rx_next_rxtail, dbg_eth_pkt_len, dbg_spi_state, dbg_sram_read_addr, dbg_sram_write_addr : std_logic_vector(15 downto 0);
 	signal dbg_eth_next_sequence, dbg_eth_audio_cmd, dbg_ip_ident, dbg_ip_frag_offset, dbg_spi_readdata : std_logic_vector(15 downto 0);
+	signal dbg_sdram_state : std_logic_vector(15 downto 0);
 begin
 
 sys_reset <= NOT PB(0); 
@@ -210,47 +211,41 @@ spi_interface : spi_wishbone_wrapper
 			);
 
 
-
--- Generating sdram_buffer_empty, sdram_buffer_below_minimum, and sdram_size_avail signals
-process(sys_clk,sys_reset)
+-- Generating sdram_buffer_empty, sdram_size_avail signals
+process(dac_sdram_address,eth_sdram_complete_address)
 begin
-	if sys_reset = '1' then
+	
+	sdram_buffer_empty <= '0';
+	
+	-- This must match the bits in SDRAM_BUFFER_SIZE exactly so it can wrap properly
+	if dac_sdram_address(21 downto 2) = "1111111111111111111" and eth_sdram_complete_address(21 downto 2) = X"00000" then
 		sdram_buffer_empty <= '1';
-		sdram_buffer_below_minimum <= '1';
-		sdram_size_avail <= (others => '1');
-	elsif rising_edge(sys_clk) then
-		
-		
-		
-		sdram_buffer_empty <= '0';
-		
-		-- This must match the bits in SDRAM_BUFFER_SIZE exactly so it can wrap properly
-		if dac_sdram_address(21 downto 2) = "1111111111111111111" and eth_sdram_complete_address(21 downto 2) = X"00000" then
-			sdram_buffer_empty <= '1';
-		elsif dac_sdram_address(21 downto 2) = (eth_sdram_complete_address(21 downto 2) - 1) then
-			sdram_buffer_empty <= '1';
-		end if;
-		
-		
-		
-		sdram_buffer_below_minimum <= '0';
-		
-		if sdram_size_avail > X"5BF00" then -- At least 0.5 second in buffer (0x080000 - (44100 Hz * 6 channels * 1 word) / 2)
-			sdram_buffer_below_minimum <= '1';
-		end if;
-		
-		
-		
-		if dac_sdram_address(21 downto 2) >= eth_sdram_complete_address(21 downto 2) then
-			sdram_size_avail <= std_logic_vector(to_unsigned(to_integer(unsigned(dac_sdram_address(21 downto 2))) - to_integer(unsigned(eth_sdram_complete_address(21 downto 2))), sdram_size_avail'length));
-		else
-			-- 16#200000# is SDRAM_BUFFER_SIZE
-			sdram_size_avail <= std_logic_vector(to_unsigned(16#80000# - (to_integer(unsigned(eth_sdram_complete_address(21 downto 2))) - to_integer(unsigned(dac_sdram_address(21 downto 2)))), sdram_size_avail'length));
-		end if;
-		
-		
+	elsif dac_sdram_address(21 downto 2) = (eth_sdram_complete_address(21 downto 2) - 1) then
+		sdram_buffer_empty <= '1';
 	end if;
+	
+	if dac_sdram_address(21 downto 2) >= eth_sdram_complete_address(21 downto 2) then
+		sdram_size_avail <= std_logic_vector(to_unsigned(to_integer(unsigned(dac_sdram_address(21 downto 2))) - to_integer(unsigned(eth_sdram_complete_address(21 downto 2))), sdram_size_avail'length));
+	else
+		-- 16#80000# is SDRAM_BUFFER_SIZE
+		sdram_size_avail <= std_logic_vector(to_unsigned(16#80000# - (to_integer(unsigned(eth_sdram_complete_address(21 downto 2))) - to_integer(unsigned(dac_sdram_address(21 downto 2)))), sdram_size_avail'length));
+	end if;
+	
 end process;
+
+
+-- Generating sdram_buffer_below_minimum signal
+process(sdram_size_avail)
+begin
+	
+	sdram_buffer_below_minimum <= '0';
+	
+	if sdram_size_avail > X"5BF00" then -- At least 0.5 second in buffer (0x080000 - (44100 Hz * 6 channels * 1 word) / 2)
+		sdram_buffer_below_minimum <= '1';
+	end if;
+	
+end process;
+
 
 
 
@@ -449,7 +444,7 @@ end process;
 -- Debug registers that the Raspberry PI can read/write, that
 -- are connected to various signals (mostly read-only)
 register0 : wishbone_register
-	generic map(nb_regs => 26)
+	generic map(nb_regs => 27)
 	 port map
 	 (
 		  -- Syscon signals
@@ -491,6 +486,7 @@ register0 : wishbone_register
 		  reg_out(23) => zzdummy19,
 		  reg_out(24) => zzdummy20,
 		  reg_out(25) => zzdummy21,
+		  reg_out(26) => zzdummy22,
 		 
 		  reg_in(0) => X"DEAD", -- Magic word to verify that the FPGA is loaded
 		  reg_in(1) => reg_sdram_data_i,
@@ -517,7 +513,8 @@ register0 : wishbone_register
 		  reg_in(22) => dbg_eth_audio_cmd,
 		  reg_in(23) => dbg_ip_ident,
 		  reg_in(24) => dbg_ip_frag_offset,
-		  reg_in(25) => dbg_spi_readdata
+		  reg_in(25) => dbg_spi_readdata,
+		  reg_in(26) => dbg_sdram_state
 	 );
 
 
@@ -556,7 +553,9 @@ sdram_controller : sdram
 		sdram_dqm_o => SDRAM_DQM,
 		sdram_addr_o => SDRAM_ADDR,
 		sdram_ba_o => SDRAM_BA,
-		sdram_data_io => SDRAM_DQ
+		sdram_data_io => SDRAM_DQ,
+		
+		dbg_state => dbg_sdram_state
 	);
 
 

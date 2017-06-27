@@ -35,7 +35,9 @@ port (
 	sdram_dqm_o : out std_logic_vector(1 downto 0);
 	sdram_addr_o : out std_logic_vector(12 downto 0);
 	sdram_ba_o : out std_logic_vector(1 downto 0);
-	sdram_data_io : inout std_logic_vector(15 downto 0)
+	sdram_data_io : inout std_logic_vector(15 downto 0);
+	
+	dbg_state : out std_logic_vector(15 downto 0)
 );
 end component;
 

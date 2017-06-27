@@ -466,7 +466,9 @@ begin
 					sram_write_addr <= (others => '0');
 					sram_read_reset_i <= '1';
 					
-					if sdram_buffer_empty = '0' then
+					sdram_cycle <= '0';
+					
+					if sdram_buffer_below_minimum = '0' then
 						-- Start read
 						sdram_cycle <= '1';
 						sdram_strobe <= '1';
@@ -572,6 +574,8 @@ begin
 					
 				when IDLE =>
 					dbg_state(11 downto 8) <= X"A";
+					
+					sdram_cycle <= '0';
 				
 					-- If sram was emptied, then reset the SRAM buffer and reload it completely
 					if sram_buffer_empty_100m = '1' then
@@ -591,8 +595,6 @@ begin
 					sdram_cycle <= '1';
 					sdram_strobe <= '1';
 					
-					sdram_timeout_counter <= sdram_timeout_counter + 1;
-					
 					if sdram_ack = '1' then
 						
 						-- Capture result
@@ -602,12 +604,14 @@ begin
 						
 					end if;
 					
-					if sdram_timeout_counter = X"FF" then
-						sram_read_reset_i <= '1';
-						sdram_cycle <= '0';
-						sdram_strobe <= '0';
-						buffer_state <= INIT;
-					end if;
+					--sdram_timeout_counter <= sdram_timeout_counter + 1;
+					
+					--if sdram_timeout_counter = X"FF" then
+					--	sram_read_reset_i <= '1';
+					--	sdram_cycle <= '0';
+					--	sdram_strobe <= '0';
+					--	buffer_state <= INIT;
+					--end if;
 					
 				when SDRAM_HAVE_ACK =>
 					dbg_state(11 downto 8) <= X"C";
@@ -672,19 +676,23 @@ begin
 					-- cannot check it in the state above
 					
 					if sdram_buffer_empty = '0' then
+						sdram_timeout_counter <= (others => '0');
 						buffer_state <= SDRAM_START_READ;
 					else
 						-- Release SDRAM so it can be filled again
 						sdram_cycle <= '0';
 					end if;
 					
-					sdram_timeout_counter <= sdram_timeout_counter + 1;
+					--sdram_timeout_counter <= sdram_timeout_counter + 1;
 
 					-- If SDRAM doesn't fill in time then abort
 					-- and fill SRAM with zeros
-					if sdram_timeout_counter = X"FF" then
-						buffer_state <= INIT;
-					end if;
+					--if sdram_timeout_counter = X"FF" then
+					--	sram_read_reset_i <= '1';
+					--	sdram_cycle <= '0';
+					--	sdram_strobe <= '0';
+					--	buffer_state <= INIT;
+					--end if;
 					
 					
 				when ERROR =>
