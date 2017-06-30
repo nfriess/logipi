@@ -148,10 +148,12 @@ architecture Behavioral of audio_player is
 	signal dac_lrclk_o : std_logic;
 	
 	signal dac_left_tweeter_data : std_logic;
-	signal dac_left_mid_data : std_logic;
+	signal dac_left_uppermid_data : std_logic;
+	signal dac_left_lowmid_data : std_logic;
 	signal dac_left_woofer_data : std_logic;
 	signal dac_right_tweeter_data : std_logic;
-	signal dac_right_mid_data : std_logic;
+	signal dac_right_uppermid_data : std_logic;
+	signal dac_right_lowmid_data : std_logic;
 	signal dac_right_woofer_data : std_logic;
 	
 	-- External 16MHz clock
@@ -161,8 +163,15 @@ architecture Behavioral of audio_player is
 	-- Output from clock MUX, one of the above clocks
 	signal clk16Mselected : std_logic;
 	
+	-- Monitoring the 16M clock to ensure that it is running
+	signal clk16Mactive, clk16Mactive_reset, clk16Mwarning_i, clk16Mwarning_o, clk16Mwarning_rst : std_logic;
+	signal clk16Mactive_count : std_logic_vector(7 downto 0);
+	
 	-- Misc signals
 	signal reg_cs : std_logic ;
+	
+	signal user_sig, idle_sig : std_logic;
+	signal idle_count : std_logic_vector(31 downto 0);
 	
 	signal zzdummy0, zzdummy1, zzdummy2, zzdummy3, zzdummy4, zzdummy5, zzdummy6, zzdummy7, zzdummy8, zzdummy9, zzdummy10, zzdummy11, zzdummy12, zzdummy13, zzdummy14, zzdummy15, zzdummy16, zzdummy17, zzdummy18, zzdummy19, zzdummy20, zzdummy21, zzdummy22 : std_logic_vector(15 downto 0);
 	
@@ -185,6 +194,74 @@ LED(0) <= dac_mute;
 --PMOD2(0) <= dac_mute;
 
 dac_clk_oe <= SW(0);
+
+
+process (clk16M, clk16Mactive_reset)
+begin
+	if clk16Mactive_reset = '1' then
+		clk16Mactive <= '0';
+	elsif rising_edge(clk16M) then
+		clk16Mactive <= '1';
+	end if;
+end process;
+
+process (sys_clk, sys_reset)
+begin
+	if sys_reset = '1' then
+		clk16Mactive_count <= (others => '0');
+		clk16Mactive_reset <= '0';
+		clk16Mwarning_i <= '0';
+	elsif rising_edge(sys_clk) then
+		
+		clk16Mactive_count <= clk16Mactive_count + 1;
+		
+		clk16Mactive_reset <= '0';
+		clk16Mwarning_i <= '0';
+		
+		if clk16Mactive_count = X"00" then
+			clk16Mactive_reset <= '1';
+		end if;
+		
+		if clk16Mactive_count = X"FF" and clk16Mactive = '0' then
+			clk16Mwarning_i <= '1';
+		end if;
+		
+	end if;
+end process;
+
+intreg_clk16M_warning : entity work.interrupt_reg
+	port map(
+		sys_clk => sys_clk,
+		sys_reset => sys_reset,
+		int_i => clk16Mwarning_i,
+		int_o => clk16Mwarning_o,
+		rst_i => clk16Mwarning_rst
+	);
+
+
+-- After 10 minutes of no data received, assert idle_sig
+process (dac_lrclk_o, sys_reset)
+begin
+	if sys_reset = '1' then
+		idle_count <= (others => '0');
+	elsif (rising_edge(dac_lrclk_o)) then
+		
+		idle_sig <= '0';
+		
+		if dac_mute = '1' then
+			idle_count <= idle_count + 1;
+		else
+			idle_count <= (others => '0');
+		end if;
+		
+		-- 44100 * 60 secs * 10 mins
+		if idle_count = X"193BF60" and dac_mute = '1' then
+			idle_sig <= '1';
+			idle_count <= idle_count;
+		end if;
+		
+	end if;
+end process;
 	
 
 -- Acts as an SPI slave device so that Raspberry PI can communicate with the FPGA (debugging)
@@ -240,7 +317,9 @@ begin
 	
 	sdram_buffer_below_minimum <= '0';
 	
-	if sdram_size_avail > X"5BF00" then -- At least 0.5 second in buffer (0x080000 - (44100 Hz * 6 channels * 1 word) / 2)
+	-- At least 0.5 second in buffer (0x080000 - (44100 Hz * 8 channels * 1 word) / 2)
+	-- Changed to be very small
+	if sdram_size_avail > X"30000" then 
 		sdram_buffer_below_minimum <= '1';
 	end if;
 	
@@ -585,6 +664,10 @@ ethernet_controller : entity work.ethernet
 		cmd_mute => cmd_mute,
 		cmd_pause => cmd_pause,
 		cmd_reset_dac => cmd_reset_dac,
+		cmd_user_sig => user_sig,
+		
+		clk16Mwarning => clk16Mwarning_o,
+		clk16Mwarning_rst => clk16Mwarning_rst,
 		
 		dbg_state => dbg_eth_state,
 		dbg_rx_current_packet => dbg_eth_rx_current_packet,
@@ -599,7 +682,8 @@ ethernet_controller : entity work.ethernet
 		dbg_spi_readdata => dbg_spi_readdata,
 		
 		led_o => LED(1),
-		pb_i => PB(1)
+		
+		use_dhcp_i => SW(1)
 	);
 
 
@@ -616,10 +700,12 @@ dac_controller : entity work.dac_controller
 		lrclk_o => dac_lrclk_o,
 		
 		dac_left_tweeter_o => dac_left_tweeter_data,
-		dac_left_mid_o => dac_left_mid_data,
+		dac_left_uppermid_o => dac_left_uppermid_data,
+		dac_left_lowmid_o => dac_left_lowmid_data,
 		dac_left_woofer_o => dac_left_woofer_data,
 		dac_right_tweeter_o => dac_right_tweeter_data,
-		dac_right_mid_o => dac_right_mid_data,
+		dac_right_uppermid_o => dac_right_uppermid_data,
+		dac_right_lowmid_o => dac_right_lowmid_data,
 		dac_right_woofer_o => dac_right_woofer_data,
 		
 		sdram_cycle => dac_sdram_cycle,
@@ -646,10 +732,16 @@ dac_controller : entity work.dac_controller
 PMOD4(0) <= dac_lrclk_o;
 PMOD4(1) <= dac_bitclk_o;
 
+PMOD4(4) <= dac_mute;
+PMOD4(5) <= user_sig;
+PMOD4(6) <= idle_sig;
+
 PMOD3(0) <= dac_left_woofer_data;
 PMOD3(1) <= dac_right_woofer_data;
-PMOD3(2) <= dac_left_mid_data;
-PMOD3(3) <= dac_right_mid_data;
+PMOD3(2) <= dac_left_lowmid_data;
+PMOD3(3) <= dac_right_lowmid_data;
+PMOD3(4) <= dac_left_uppermid_data;
+PMOD3(5) <= dac_right_uppermid_data;
 PMOD3(6) <= dac_left_tweeter_data;
 PMOD3(7) <= dac_right_tweeter_data;
 

@@ -28,10 +28,12 @@ entity dac_controller is
 			  lrclk_o : out   STD_LOGIC;
 			  
            dac_left_tweeter_o : out  STD_LOGIC;
-           dac_left_mid_o : out  STD_LOGIC;
+           dac_left_uppermid_o : out  STD_LOGIC;
+           dac_left_lowmid_o : out  STD_LOGIC;
            dac_left_woofer_o : out  STD_LOGIC;
            dac_right_tweeter_o : out  STD_LOGIC;
-           dac_right_mid_o : out  STD_LOGIC;
+           dac_right_uppermid_o : out  STD_LOGIC;
+           dac_right_lowmid_o : out  STD_LOGIC;
            dac_right_woofer_o : out  STD_LOGIC;
 			  mute_o : out  STD_LOGIC;
 			  
@@ -75,17 +77,21 @@ architecture Behavioral of dac_controller is
 	signal need_mute : std_logic;
 	
 	signal left_tweeter_load_reg : std_logic_vector(19 downto 0);
-	signal left_mid_load_reg : std_logic_vector(19 downto 0);
+	signal left_lowmid_load_reg : std_logic_vector(19 downto 0);
+	signal left_uppermid_load_reg : std_logic_vector(19 downto 0);
 	signal left_woofer_load_reg : std_logic_vector(19 downto 0);
 	signal right_tweeter_load_reg : std_logic_vector(19 downto 0);
-	signal right_mid_load_reg : std_logic_vector(19 downto 0);
+	signal right_lowmid_load_reg : std_logic_vector(19 downto 0);
+	signal right_uppermid_load_reg : std_logic_vector(19 downto 0);
 	signal right_woofer_load_reg : std_logic_vector(19 downto 0);
 	
 	signal left_tweeter_shift_reg : std_logic_vector(19 downto 0);
-	signal left_mid_shift_reg : std_logic_vector(19 downto 0);
+	signal left_lowmid_shift_reg : std_logic_vector(19 downto 0);
+	signal left_uppermid_shift_reg : std_logic_vector(19 downto 0);
 	signal left_woofer_shift_reg : std_logic_vector(19 downto 0);
 	signal right_tweeter_shift_reg : std_logic_vector(19 downto 0);
-	signal right_mid_shift_reg : std_logic_vector(19 downto 0);
+	signal right_lowmid_shift_reg : std_logic_vector(19 downto 0);
+	signal right_uppermid_shift_reg : std_logic_vector(19 downto 0);
 	signal right_woofer_shift_reg : std_logic_vector(19 downto 0);
 	
 	signal sram_write_addr : std_logic_vector(SRAM_ADDR_SIZE-1 downto 0) := (others => '0');
@@ -126,9 +132,12 @@ architecture Behavioral of dac_controller is
 	
 	type DAC_REG is (
 		LEFT_WOOFER, RIGHT_WOOFER,
-		LEFT_MIDRANGE, RIGHT_MIDRANGE,
+		LEFT_LOWMIDRANGE, RIGHT_LOWMIDRANGE,
+		LEFT_UPPERMIDRANGE, RIGHT_UPPERMIDRANGE,
 		LEFT_TWEETER, RIGHT_TWEETER
 	);
+	
+	constant NUMBER_OF_CHANNELS : integer := 8;
 	
 	signal next_dac_load_reg : DAC_REG := LEFT_WOOFER;
 	
@@ -245,10 +254,12 @@ begin
 	
 	-- AND gates on the final output data lines to DACs
 	dac_left_tweeter_o <= '0' when need_mute = '1' else left_tweeter_shift_reg(19);
-	dac_left_mid_o <= '0' when need_mute = '1' else left_mid_shift_reg(19);
+	dac_left_uppermid_o <= '0' when need_mute = '1' else left_uppermid_shift_reg(19);
+	dac_left_lowmid_o <= '0' when need_mute = '1' else left_lowmid_shift_reg(19);
 	dac_left_woofer_o <= '0' when need_mute = '1' else left_woofer_shift_reg(19);
 	dac_right_tweeter_o <= '0' when need_mute = '1' else right_tweeter_shift_reg(19);
-	dac_right_mid_o <= '0' when need_mute = '1' else right_mid_shift_reg(19);
+	dac_right_uppermid_o <= '0' when need_mute = '1' else right_uppermid_shift_reg(19);
+	dac_right_lowmid_o <= '0' when need_mute = '1' else right_lowmid_shift_reg(19);
 	dac_right_woofer_o <= '0' when need_mute = '1' else right_woofer_shift_reg(19);
 	
 
@@ -268,16 +279,18 @@ begin
 			bitclk_i <= '0';
 			lrclk_i <= '0';
 			left_tweeter_shift_reg <= (others => '0');
-			left_mid_shift_reg <= (others => '0');
+			left_uppermid_shift_reg <= (others => '0');
 			left_woofer_shift_reg <= (others => '0');
 			right_tweeter_shift_reg <= (others => '0');
-			right_mid_shift_reg <= (others => '0');
+			right_uppermid_shift_reg <= (others => '0');
 			right_woofer_shift_reg <= (others => '0');
 			left_tweeter_load_reg <= (others => '0');
-			left_mid_load_reg <= (others => '0');
+			left_uppermid_load_reg <= (others => '0');
+			left_lowmid_load_reg <= (others => '0');
 			left_woofer_load_reg <= (others => '0');
 			right_tweeter_load_reg <= (others => '0');
-			right_mid_load_reg <= (others => '0');
+			right_uppermid_load_reg <= (others => '0');
+			right_lowmid_load_reg <= (others => '0');
 			right_woofer_load_reg <= (others => '0');
 			sram_read <= '0';
 			sram_read_addr <= (others => '1');
@@ -317,8 +330,10 @@ begin
 				
 				left_woofer_shift_reg <= (others => '0');
 				right_woofer_shift_reg <= (others => '0');
-				left_mid_shift_reg <= (others => '0');
-				right_mid_shift_reg <= (others => '0');
+				left_lowmid_shift_reg <= (others => '0');
+				right_lowmid_shift_reg <= (others => '0');
+				left_uppermid_shift_reg <= (others => '0');
+				right_uppermid_shift_reg <= (others => '0');
 				left_tweeter_shift_reg <= (others => '0');
 				right_tweeter_shift_reg <= (others => '0');
 				
@@ -337,8 +352,10 @@ begin
 					
 					left_woofer_shift_reg(19 downto 0) <= left_woofer_shift_reg(18 downto 0) & "0";
 					right_woofer_shift_reg(19 downto 0) <= right_woofer_shift_reg(18 downto 0) & "0";
-					left_mid_shift_reg(19 downto 0) <= left_mid_shift_reg(18 downto 0) & "0";
-					right_mid_shift_reg(19 downto 0) <= right_mid_shift_reg(18 downto 0) & "0";
+					left_lowmid_shift_reg(19 downto 0) <= left_lowmid_shift_reg(18 downto 0) & "0";
+					right_lowmid_shift_reg(19 downto 0) <= right_lowmid_shift_reg(18 downto 0) & "0";
+					left_uppermid_shift_reg(19 downto 0) <= left_uppermid_shift_reg(18 downto 0) & "0";
+					right_uppermid_shift_reg(19 downto 0) <= right_uppermid_shift_reg(18 downto 0) & "0";
 					left_tweeter_shift_reg(19 downto 0) <= left_tweeter_shift_reg(18 downto 0) & "0";
 					right_tweeter_shift_reg(19 downto 0) <= right_tweeter_shift_reg(18 downto 0) & "0";
 					
@@ -346,7 +363,7 @@ begin
 				
 				
 				-- Generate SRAM read signal and increment read address
-				if cmd_pause_16m = '0' and sram_buffer_empty_16m = '0' and clk16M_count < 6 then
+				if cmd_pause_16m = '0' and sram_buffer_empty_16m = '0' and clk16M_count < 8 then
 					
 					-- Get next data from sram
 					sram_read_addr <= sram_read_addr + 1;
@@ -362,7 +379,7 @@ begin
 				
 				
 				-- Capture output of SRAM
-				if cmd_pause_16m = '0' and sram_buffer_empty_16m = '0' and clk16M_count > 0 and clk16M_count < 7 then
+				if cmd_pause_16m = '0' and sram_buffer_empty_16m = '0' and clk16M_count > 0 and clk16M_count < 9 then
 					
 					if next_dac_load_reg = LEFT_WOOFER or sram_data_out(31) = '1' then
 						
@@ -379,16 +396,26 @@ begin
 					elsif next_dac_load_reg = RIGHT_WOOFER then
 						
 						right_woofer_load_reg <= sram_data_out(23 downto 4);
-						next_dac_load_reg <= LEFT_MIDRANGE;
+						next_dac_load_reg <= LEFT_LOWMIDRANGE;
 					
-					elsif next_dac_load_reg = LEFT_MIDRANGE then
+					elsif next_dac_load_reg = LEFT_LOWMIDRANGE then
 						
-						left_mid_load_reg <= sram_data_out(23 downto 4);
-						next_dac_load_reg <= RIGHT_MIDRANGE;
+						left_lowmid_load_reg <= sram_data_out(23 downto 4);
+						next_dac_load_reg <= RIGHT_LOWMIDRANGE;
 					
-					elsif next_dac_load_reg = RIGHT_MIDRANGE then
+					elsif next_dac_load_reg = RIGHT_LOWMIDRANGE then
 						
-						right_mid_load_reg <= sram_data_out(23 downto 4);
+						right_lowmid_load_reg <= sram_data_out(23 downto 4);
+						next_dac_load_reg <= LEFT_UPPERMIDRANGE;
+					
+					elsif next_dac_load_reg = LEFT_UPPERMIDRANGE then
+						
+						left_uppermid_load_reg <= sram_data_out(23 downto 4);
+						next_dac_load_reg <= RIGHT_UPPERMIDRANGE;
+					
+					elsif next_dac_load_reg = RIGHT_UPPERMIDRANGE then
+						
+						right_uppermid_load_reg <= sram_data_out(23 downto 4);
 						next_dac_load_reg <= LEFT_TWEETER;
 					
 					elsif next_dac_load_reg = LEFT_TWEETER then
@@ -406,14 +433,19 @@ begin
 				end if; -- SRAM read capture
 				
 				
+				-- TODO: Technically this is 1 clock cycle later than we should,
+				-- as bitclk changes at 8 above
+				
 				-- Load shift registers.  Could also be state 64, which would cause
 				-- zeros to be shifted in at first rather than repeating the MSB
-				if clk16M_count = 7 then
+				if clk16M_count = 9 then
 					
 					left_woofer_shift_reg <= left_woofer_load_reg;
 					right_woofer_shift_reg <= right_woofer_load_reg;
-					left_mid_shift_reg <= left_mid_load_reg;
-					right_mid_shift_reg <= right_mid_load_reg;
+					left_lowmid_shift_reg <= left_lowmid_load_reg;
+					right_lowmid_shift_reg <= right_lowmid_load_reg;
+					left_uppermid_shift_reg <= left_uppermid_load_reg;
+					right_uppermid_shift_reg <= right_uppermid_load_reg;
 					left_tweeter_shift_reg <= left_tweeter_load_reg;
 					right_tweeter_shift_reg <= right_tweeter_load_reg;
 					
@@ -513,7 +545,7 @@ begin
 					if sdram_data_reg(31) = '1' or sample_count_in_frame = 0 then
 						sample_count_in_frame <= 1;
 						sram_data_in(31) <= '1';
-					elsif sample_count_in_frame = 5 then
+					elsif sample_count_in_frame = NUMBER_OF_CHANNELS-1 then
 						sample_count_in_frame <= 0;
 					else
 						sample_count_in_frame <= sample_count_in_frame + 1;
@@ -637,7 +669,7 @@ begin
 					if sdram_data_reg(31) = '1' or sample_count_in_frame = 0 then
 						sample_count_in_frame <= 1;
 						sram_data_in(31) <= '1';
-					elsif sample_count_in_frame = 5 then
+					elsif sample_count_in_frame = NUMBER_OF_CHANNELS-1 then
 						sample_count_in_frame <= 0;
 					else
 						sample_count_in_frame <= sample_count_in_frame + 1;
@@ -683,16 +715,13 @@ begin
 						sdram_cycle <= '0';
 					end if;
 					
-					--sdram_timeout_counter <= sdram_timeout_counter + 1;
-
 					-- If SDRAM doesn't fill in time then abort
-					-- and fill SRAM with zeros
-					--if sdram_timeout_counter = X"FF" then
-					--	sram_read_reset_i <= '1';
-					--	sdram_cycle <= '0';
-					--	sdram_strobe <= '0';
-					--	buffer_state <= INIT;
-					--end if;
+					if sram_buffer_empty_100m = '1' then
+						sram_read_reset_i <= '1';
+						sdram_cycle <= '0';
+						sdram_strobe <= '0';
+						buffer_state <= INIT;
+					end if;
 					
 					
 				when ERROR =>

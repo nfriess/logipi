@@ -40,6 +40,11 @@ entity ethernet is
 				cmd_mute : out STD_LOGIC;
 				cmd_pause : out STD_LOGIC;
 				cmd_reset_dac : out STD_LOGIC;
+				cmd_user_sig : out STD_LOGIC;
+				
+				
+				clk16Mwarning : in STD_LOGIC;
+				clk16Mwarning_rst : out STD_LOGIC;
 				
 				
 				dbg_state : out STD_LOGIC_VECTOR(15 downto 0);
@@ -55,7 +60,9 @@ entity ethernet is
 				dbg_spi_readdata : out STD_LOGIC_VECTOR(15 downto 0);
 				
 				led_o : out STD_LOGIC;
-				pb_i : in STD_LOGIC
+				
+				use_dhcp_i : in STD_LOGIC
+				
 			  );
 end ethernet;
 
@@ -177,7 +184,6 @@ architecture Behavioral of ethernet is
 		LINK_RD_LINK_STAT, LINK_WR_DUPLEX, LINK_WR_MABBIPG,
 		LINK_RXEN, LINK_RXDISABLE, LINK_CLEAR_INTERRUPT,
 		
-		--RX_READ_PKTCOUNT, RX_CHECK_PKTCOUNT,
 		RX_SET_READ_PTR, RX_READ_NEXT_PTR, RX_READ_RSV_1,
 		RX_READ_DST_ADDR_1, RX_READ_DST_ADDR_2_SRC_ADDR_1, RX_READ_SRC_ADDR_2,
 		RX_READ_ETHERTYPE, RX_READ_DATA_1,
@@ -205,7 +211,7 @@ architecture Behavioral of ethernet is
 		TX_STATUS_ETHERTYPE, TX_STATUS_IPHDR_1, TX_STATUS_IPHDR_2,
 		TX_STATUS_IPHDR_3, TX_STATUS_IPHDR_4, TX_STATUS_IPHDR_5,
 		TX_STATUS_UDPHDR_1, TX_STATUS_UDPHDR_2, TX_STATUS_UDPHDR_3,
-		TX_STATUS_SEQUENCE, TX_STATUS_WINDOW,
+		TX_STATUS_SEQUENCE, TX_STATUS_WINDOW, TX_STATUS_STATUS,
 		TX_STATUS_SET_TXST, TX_STATUS_SET_TXLEN, TX_STATUS_DO_TXRTS,
 		
 		IDLE, STARTSPI, WAITACK, WAITCOUNT, ERROR,
@@ -505,10 +511,13 @@ begin
 		dbg_skip_sequence <= (others => '0');
 		--dbg_ip_hdr_data <= (others => '0');
 		start_of_frame <= '1';
+		cmd_user_sig <= '0';
+		clk16Mwarning_rst <= '0';
 	elsif rising_edge(sys_clk) then
 	
 		ten_hz_int_rst <= '0';
 		cmd_reset_dac <= '0';
+		clk16Mwarning_rst <= '0';
 		
 		case state is
 		
@@ -909,9 +918,17 @@ begin
 					link_status <= '1';
 					
 					-- Reset DHCP status
-					dhcp_state <= NEED_DISCOVER;
-					dhcp_retries_left <= (others => '1');
-					dhcp_renew_left <= (others => '0');
+					if use_dhcp_i = '1' then
+						dhcp_state <= NEED_DISCOVER;
+						dhcp_retries_left <= (others => '1');
+						dhcp_renew_left <= (others => '0');
+					else
+						-- Skip straight to chosing a link-local address
+						dhcp_state <= SENT_DISCOVER;
+						dhcp_resp_timeout <= X"F";
+						dhcp_retries_left <= (others => '0');
+						dhcp_renew_left <= (others => '0');
+					end if;
 					
 					duplex <= spi_readdata(2);
 					
@@ -995,30 +1012,6 @@ begin
 -- Not used.  At one point there seemed to be extra interrupts and
 -- this would prevent reading data when there was none.
 			
---			when RX_READ_PKTCOUNT =>
---				-- Read PKTCOUNT
---				
---				dbg_state <= X"0000";
---				
---				spi_writedata <= CMD_READ_REG_UNBANKED & REG_ESTATL & X"00" & X"00";
---				spi_datacount <= "011";
---				spi_auto_disable <= '1';
---				
---				next_state <= RX_CHECK_PKTCOUNT;
---				state <= STARTSPI;
---				
---			when RX_CHECK_PKTCOUNT =>
---				-- Compare PKTCOUNT
---				
---				dbg_state <= X"00" & spi_readdata(7 downto 0);
---				
---				if spi_readdata(7 downto 0) = X"00" then
---					state <= IDLE;
---					dbg_state <= X"F" & spi_readdata(7 downto 0) & "000" & eth_int_i;
---				else
---					state <= RX_SET_READ_PTR;
---				end if;
-				
 			when RX_SET_READ_PTR =>
 				
 				dbg_state <= X"00CF";
@@ -1508,8 +1501,6 @@ begin
 				
 				ip_checksum <= (X"0000" & spi_readdata(31 downto 16)) + (X"0000" & spi_readdata(15 downto 0));
 				
-				--dbg_ip_hdr_data(255 downto 224) <= spi_readdata;
-				
 				ip_hdr_len <= spi_readdata(27 downto 24);
 				ip_pkt_len <= spi_readdata(15 downto 0);
 				
@@ -1542,8 +1533,6 @@ begin
 				
 				ip_checksum <= ip_checksum + (X"0000" & spi_readdata(31 downto 16)) + (X"0000" & spi_readdata(15 downto 0));
 				
-				--dbg_ip_hdr_data(223 downto 192) <= spi_readdata;
-				
 				-- Save ident to compare other fragments later
 				ip_ident <= spi_readdata(31 downto 16);
 				
@@ -1569,8 +1558,6 @@ begin
 				
 				ip_checksum <= ip_checksum + (X"0000" & spi_readdata(31 downto 16)) + (X"0000" & spi_readdata(15 downto 0));
 				
-				--dbg_ip_hdr_data(191 downto 160) <= spi_readdata;
-				
 				ip_proto <= spi_readdata(23 downto 16);
 				
 				-- Read source IP address
@@ -1588,8 +1575,6 @@ begin
 				dbg_state <= X"0205";
 				
 				ip_checksum <= ip_checksum + (X"0000" & spi_readdata(31 downto 16)) + (X"0000" & spi_readdata(15 downto 0));
-				
-				--dbg_ip_hdr_data(159 downto 128) <= spi_readdata;
 				
 				ip_src_addr <= spi_readdata;
 				
@@ -1609,8 +1594,6 @@ begin
 				
 				ip_checksum <= ip_checksum + (X"0000" & spi_readdata(31 downto 16)) + (X"0000" & spi_readdata(15 downto 0));
 				
-				--dbg_ip_hdr_data(127 downto 96) <= spi_readdata;
-				
 				ip_dest_addr <= spi_readdata;
 				
 				if spi_readdata /= local_ipaddr and spi_readdata /= X"FFFFFFFF" then
@@ -1624,7 +1607,6 @@ begin
 					state <= RX_IP_HDR_OPTIONS;
 				else
 					state <= RX_IP_CHECK_FRAGMENT_PROTO;
-					--state <= DBG_DUMP_PACKET_1;
 				end if;
 				
 			when RX_IP_HDR_OPTIONS =>
@@ -1643,7 +1625,6 @@ begin
 					next_state <= RX_IP_HDR_OPTIONS;
 				else
 					next_state <= RX_IP_CHECK_FRAGMENT_PROTO;
-					--next_state <= DBG_DUMP_PACKET_1;
 				end if;
 				
 				state <= STARTSPI;
@@ -1652,99 +1633,7 @@ begin
 				spi_cycle <= '0'; -- Since auto_disable was 0 in prev state
 				pkt_len <= X"000" & ip_hdr_len;
 				state <= ERROR;
-				
-				
 			
-			
-			
---			when DBG_DUMP_PACKET_1 =>
---			
---				dbg_state <= X"0F01";
---				
---				sdram_cycle_s <= '1';
---				sdram_strobe_s <= '1';
---				sdram_writedata_reg <= dbg_ip_hdr_data(255 downto 224);
---				
---				next_state <= DBG_DUMP_PACKET_2;
---				state <= DBG_DUMP_PACKET_WAIT;
---
---
---			when DBG_DUMP_PACKET_WAIT =>
---				
---				dbg_state <= X"0F02";
---				
---				if sdram_ack = '1' then
---				
---					sdram_write_ptr <= sdram_write_ptr + 1;
---					if sdram_write_ptr = (SDRAM_BUFFER_SIZE-1) then
---						sdram_write_ptr <= X"000000";
---					end if;
---					
---					sdram_complete_ptr <= sdram_write_ptr + 1;
---					if sdram_write_ptr = (SDRAM_BUFFER_SIZE-1) then
---						sdram_complete_ptr <= X"000000";
---					end if;
---					
---					sdram_cycle_s <= '0';
---					sdram_strobe_s <= '0';
---					
---					state <= next_state;
---					
---				end if;
---			
---			
---			when DBG_DUMP_PACKET_2 =>
---			
---				dbg_state <= X"0F03";
---				
---				sdram_cycle_s <= '1';
---				sdram_strobe_s <= '1';
---				sdram_writedata_reg <= dbg_ip_hdr_data(223 downto 192);
---				
---				next_state <= DBG_DUMP_PACKET_3;
---				state <= DBG_DUMP_PACKET_WAIT;
---			
---			
---			when DBG_DUMP_PACKET_3 =>
---			
---				dbg_state <= X"0F04";
---				
---				sdram_cycle_s <= '1';
---				sdram_strobe_s <= '1';
---				sdram_writedata_reg <= dbg_ip_hdr_data(191 downto 160);
---				
---				next_state <= DBG_DUMP_PACKET_4;
---				state <= DBG_DUMP_PACKET_WAIT;
---			
---			
---			when DBG_DUMP_PACKET_4 =>
---			
---				dbg_state <= X"0F05";
---				
---				sdram_cycle_s <= '1';
---				sdram_strobe_s <= '1';
---				sdram_writedata_reg <= dbg_ip_hdr_data(159 downto 128);
---				
---				next_state <= DBG_DUMP_PACKET_5;
---				state <= DBG_DUMP_PACKET_WAIT;
---			
---			
---			when DBG_DUMP_PACKET_5 =>
---			
---				dbg_state <= X"0F06";
---				
---				sdram_cycle_s <= '1';
---				sdram_strobe_s <= '1';
---				sdram_writedata_reg <= dbg_ip_hdr_data(127 downto 96);
---				
---				next_state <= RX_IP_CHECK_FRAGMENT_PROTO;
---				state <= DBG_DUMP_PACKET_WAIT;
-			
-			
-			
-			
-				
-				
 			when RX_IP_CHECK_FRAGMENT_PROTO =>
 				-- Now check that fragment matches expected ident, position, etc
 				
@@ -1762,11 +1651,9 @@ begin
 						-- Continue to check port numbers before deciding what to do
 						spi_writedata <= X"00" & X"00" & X"00" & X"00";
 						spi_datacount <= "100";
-						--spi_auto_disable <= '0';
 						spi_auto_disable <= '1';
 						
 						next_state <= RX_UDP_LEN_CHECKSUM;
-						--next_state <= DBG_DUMP_PACKET_6;
 						state <= STARTSPI;
 						
 					elsif ip_frag_offset = ip_next_frag_offset and ip_ident = ip_last_ident then
@@ -1787,51 +1674,7 @@ begin
 					spi_cycle <= '0'; -- Since auto_disable was 0 in prev state
 					state <= RX_SET_ERXTAIL;
 				end if;
-				
-				
-				
-				
---			when DBG_FLAG_1 =>
---				
---				sdram_cycle_s <= '1';
---				sdram_strobe_s <= '1';
---				sdram_writedata_reg <= X"11111111";
---				
---				next_state <= DBG_DUMP_PACKET_8;
---				state <= DBG_DUMP_PACKET_WAIT;
---				
---				
---			when DBG_DUMP_PACKET_8 =>
---			
---				sdram_cycle_s <= '1';
---				sdram_strobe_s <= '1';
---				sdram_writedata_reg <= "000" & ip_frag_offset & "000" & ip_next_frag_offset;
---				
---				next_state <= DBG_DUMP_PACKET_9;
---				state <= DBG_DUMP_PACKET_WAIT;
---				
---			when DBG_DUMP_PACKET_9 =>
---			
---				sdram_cycle_s <= '1';
---				sdram_strobe_s <= '1';
---				sdram_writedata_reg <= ip_ident & ip_last_ident;
---				
---				next_state <= RX_SET_ERXTAIL;
---				state <= DBG_DUMP_PACKET_WAIT;
---				
---			when DBG_DUMP_PACKET_6 =>
---			
---				dbg_state <= X"0F07";
---				
---				sdram_cycle_s <= '1';
---				sdram_strobe_s <= '1';
---				sdram_writedata_reg <= spi_readdata;
---				
---				next_state <= RX_UDP_LEN_CHECKSUM;
---				state <= DBG_DUMP_PACKET_WAIT;
-				
-				
-				
+			
 			when RX_UDP_LEN_CHECKSUM =>
 				
 				dbg_state <= X"0302";
@@ -1843,29 +1686,10 @@ begin
 				spi_writedata <= CMD_READ_ERXDATA & X"00" & X"00" & X"00";
 				spi_datacount <= "101";
 				spi_auto_disable <= '1';
-				--spi_writedata <= X"00" & X"00" & X"00" & X"00";
-				--spi_datacount <= "100";
-				--spi_auto_disable <= '0';
 				
 				next_state <= RX_UDP_DATA_1;
-				--next_state <= DBG_DUMP_PACKET_7;
 				state <= STARTSPI;
-				
-				
-				
---			when DBG_DUMP_PACKET_7 =>
---			
---				dbg_state <= X"0F08";
---				
---				sdram_cycle_s <= '1';
---				sdram_strobe_s <= '1';
---				sdram_writedata_reg <= spi_readdata;
---				
---				next_state <= RX_UDP_DATA_1;
---				state <= DBG_DUMP_PACKET_WAIT;
-				
-				
-				
+			
 			when RX_UDP_DATA_1 =>
 				-- Save length and ignore checksum
 				
@@ -1917,8 +1741,6 @@ begin
 					
 					spi_writedata <= CMD_READ_ERXDATA & X"00" & X"00" & X"00";
 					spi_datacount <= "101";
-					--spi_writedata <= X"00" & X"00" & X"00" & X"00";
-					--spi_datacount <= "100";
 					spi_auto_disable <= '0';
 					
 					next_state <= RX_DHCP_HDR;
@@ -1937,7 +1759,6 @@ begin
 				dbg_state <= X"0304";
 				
 				-- TODO: Reset entire system?
-				-- TODO: Stop command to empty buffer immediately?
 				
 				-- data(31) => '1' means no audio samples
 				-- data(8) => '1' means reset dac controller (sdram buffer is ignored)
@@ -1981,6 +1802,13 @@ begin
 					sdram_complete_ptr <= (others => '0');
 				end if;
 				
+				if audio_cmd(16) = '1' then
+					cmd_user_sig <= '0';
+				elsif audio_cmd(17) = '1' then
+					cmd_user_sig <= '1';
+				end if;
+				
+				
 				if audio_cmd(31) = '0' and (audio_cmd(1) = '1' or audio_next_sequence = spi_readdata) then
 				
 					-- First fragment so always assume there was no audio data in between
@@ -2004,41 +1832,8 @@ begin
 					ip_next_frag_offset <= (others => '0'); -- Force next fragment to be 0
 					spi_cycle <= '0'; -- Since auto_disable was 0 in prev state
 					state <= RX_SET_ERXTAIL;
-					--state <= DBG_FLAG_2;
 				end if;
-				
-				
-				
---			when DBG_FLAG_2 =>
---				
---				sdram_cycle_s <= '1';
---				sdram_strobe_s <= '1';
---				sdram_writedata_reg <= X"22222222";
---				
---				next_state <= DBG_DUMP_PACKET_10;
---				state <= DBG_DUMP_PACKET_WAIT;
---				
---				
---			when DBG_DUMP_PACKET_10 =>
---			
---				sdram_cycle_s <= '1';
---				sdram_strobe_s <= '1';
---				sdram_writedata_reg <= audio_next_sequence;
---				
---				next_state <= DBG_DUMP_PACKET_11;
---				state <= DBG_DUMP_PACKET_WAIT;
---				
---				
---			when DBG_DUMP_PACKET_11 =>
---			
---				sdram_cycle_s <= '1';
---				sdram_strobe_s <= '1';
---				sdram_writedata_reg <= spi_readdata;
---				
---				next_state <= RX_SET_ERXTAIL;
---				state <= DBG_DUMP_PACKET_WAIT;
-				
-				
+			
 			when RX_AUDIO_DATA_SAVE =>
 				-- Set SDRAM data
 				
@@ -2184,9 +1979,6 @@ begin
 						if sdram_write_ptr = (SDRAM_BUFFER_SIZE-1) then
 							sdram_complete_ptr <= X"000000";
 						end if;
-						--state <= DBG_FLAG_3;
-					--else
-						--state <= RX_SET_ERXTAIL;
 					end if;
 					
 					state <= RX_SET_ERXTAIL;
@@ -2199,37 +1991,6 @@ begin
 					state <= RX_AUDIO_DATA_SAVE;
 					
 				end if;
-				
-				
---			when DBG_FLAG_3 =>
---				
---				sdram_cycle_s <= '1';
---				sdram_strobe_s <= '1';
---				sdram_writedata_reg <= X"AAAAAAAA";
---				
---				next_state <= DBG_DUMP_PACKET_12;
---				state <= DBG_DUMP_PACKET_WAIT;
---				
---				
---			when DBG_DUMP_PACKET_12 =>
---			
---				sdram_cycle_s <= '1';
---				sdram_strobe_s <= '1';
---				sdram_writedata_reg <= audio_next_sequence;
---				
---				next_state <= DBG_DUMP_PACKET_13;
---				state <= DBG_DUMP_PACKET_WAIT;
---				
---				
---			when DBG_DUMP_PACKET_13 =>
---			
---				sdram_cycle_s <= '1';
---				sdram_strobe_s <= '1';
---				sdram_writedata_reg <= X"0000" & "000" & ip_frag_offset;
---				
---				next_state <= RX_SET_ERXTAIL;
---				state <= DBG_DUMP_PACKET_WAIT;
-				
 				
 			when RX_UDP_RESUME_FRAGMENT =>
 				-- Special case for a subsequent IP fragment
@@ -2735,8 +2496,6 @@ begin
 				-- Set ERXTAIL to indicate that we are done with
 				-- the buffer space
 				
-				--dbg_state(14) <= '1';
-				
 				spi_writedata <= CMD_WRITE_REG_UNBANKED & REG_ERXTAILL & rx_next_rxtail(7 downto 0) & rx_next_rxtail(15 downto 8);
 				spi_datacount <= "100";
 				spi_auto_disable <= '1';
@@ -2746,8 +2505,6 @@ begin
 				
 			when RX_DECPKT =>
 				-- Decrement packet counter and update rx_current_packet
-				
-				--dbg_state(13) <= '1';
 				
 				rx_current_packet <= rx_next_packet;
 				
@@ -2848,10 +2605,10 @@ begin
 			when TX_STATUS_IPHDR_1 =>
 				-- Write 4 bytes of IP header: (Ver, IHL), (DSCP, ECN), Total Len (x2)
 				
-				ip_checksum <= X"00004500" + X"00000024";
+				ip_checksum <= X"00004500" + X"00000028";
 				
-				-- Length = 20 (IP hdr) + 8 (UDP hdr) + 8 (data) = 0x0024
-				spi_writedata <= X"45" & X"00" & X"0024";
+				-- Length = 20 (IP hdr) + 8 (UDP hdr) + 12 (data) = 0x0028
+				spi_writedata <= X"45" & X"00" & X"0028";
 				spi_datacount <= "100";
 				spi_auto_disable <= '0';
 				
@@ -2915,9 +2672,9 @@ begin
 			when TX_STATUS_UDPHDR_2 =>
 				-- Write 4 bytes of UDP header: Dest port, Length, Checksum
 				
-				-- UDP hdr = 8, UDP data = 8, total 16 bytes or 0x10
+				-- UDP hdr = 8, UDP data = 12, total 20 bytes
 				-- Checksum 0 means ignore
-				spi_writedata <= X"0010" & X"0000";
+				spi_writedata <= X"0014" & X"0000";
 				spi_datacount <= "100";
 				spi_auto_disable <= '0';
 				
@@ -2931,7 +2688,6 @@ begin
 				
 				spi_writedata <= audio_next_sequence;
 				spi_datacount <= "100";
-				--spi_auto_disable <= '1';
 				spi_auto_disable <= '0';
 				
 				next_state <= TX_STATUS_WINDOW;
@@ -2943,6 +2699,20 @@ begin
 				--dbg_state <= X"0420";
 				
 				spi_writedata <= "000000" & sdram_size_avail & "00";
+				spi_datacount <= "100";
+				spi_auto_disable <= '0';
+				
+				next_state <= TX_STATUS_STATUS;
+				state <= STARTSPI;
+				
+			when TX_STATUS_STATUS =>
+				-- Write 4 bytes of status bitmask
+				
+				--dbg_state <= X"0420";
+				
+				clk16Mwarning_rst <= '1';
+				
+				spi_writedata <= X"0000000" & "000" & clk16Mwarning;
 				spi_datacount <= "100";
 				spi_auto_disable <= '1';
 				
@@ -2966,8 +2736,8 @@ begin
 				
 				--dbg_state <= X"0450";
 				
-				-- IP/UDP header is 28 bytes, 8 bytes data, plus 2 ethertype, plus 6 dest MAC addr
-				spi_writedata <= CMD_WRITE_REG_UNBANKED & REG_ETXLENL & X"2C" & X"00";
+				-- IP/UDP header is 28 bytes, 12 bytes data, plus 2 ethertype, plus 6 dest MAC addr
+				spi_writedata <= CMD_WRITE_REG_UNBANKED & REG_ETXLENL & X"34" & X"00";
 				spi_datacount <= "100";
 				spi_auto_disable <= '1';
 				
