@@ -295,17 +295,17 @@ begin
 	sdram_buffer_empty <= '0';
 	
 	-- This must match the bits in SDRAM_BUFFER_SIZE exactly so it can wrap properly
-	if dac_sdram_address(21 downto 2) = "1111111111111111111" and eth_sdram_complete_address(21 downto 2) = X"00000" then
+	if dac_sdram_address(22 downto 2) = "11111111111111111111" and eth_sdram_complete_address(22 downto 2) = X"00000" then
 		sdram_buffer_empty <= '1';
-	elsif dac_sdram_address(21 downto 2) = (eth_sdram_complete_address(21 downto 2) - 1) then
+	elsif dac_sdram_address(22 downto 2) = (eth_sdram_complete_address(22 downto 2) - 1) then
 		sdram_buffer_empty <= '1';
 	end if;
 	
-	if dac_sdram_address(21 downto 2) >= eth_sdram_complete_address(21 downto 2) then
-		sdram_size_avail <= std_logic_vector(to_unsigned(to_integer(unsigned(dac_sdram_address(21 downto 2))) - to_integer(unsigned(eth_sdram_complete_address(21 downto 2))), sdram_size_avail'length));
+	if dac_sdram_address(22 downto 2) >= eth_sdram_complete_address(22 downto 2) then
+		sdram_size_avail <= std_logic_vector(to_unsigned(to_integer(unsigned(dac_sdram_address(22 downto 2))) - to_integer(unsigned(eth_sdram_complete_address(22 downto 2))), sdram_size_avail'length));
 	else
-		-- 16#80000# is SDRAM_BUFFER_SIZE
-		sdram_size_avail <= std_logic_vector(to_unsigned(16#80000# - (to_integer(unsigned(eth_sdram_complete_address(21 downto 2))) - to_integer(unsigned(dac_sdram_address(21 downto 2)))), sdram_size_avail'length));
+		-- 16#100000# is SDRAM_BUFFER_SIZE
+		sdram_size_avail <= std_logic_vector(to_unsigned(16#100000# - (to_integer(unsigned(eth_sdram_complete_address(22 downto 2))) - to_integer(unsigned(dac_sdram_address(22 downto 2)))), sdram_size_avail'length));
 	end if;
 	
 end process;
@@ -317,7 +317,7 @@ begin
 	
 	sdram_buffer_below_minimum <= '0';
 	
-	-- At least 0.5 second in buffer (0x080000 - (44100 Hz * 8 channels * 1 word) / 2)
+	-- At least 0.5 second in buffer (SDRAM_BUFFER_SIZE - (44100 Hz * 8 channels * 1 word) / 2)
 	-- Changed to be very small
 	if sdram_size_avail > X"30000" then 
 		sdram_buffer_below_minimum <= '1';

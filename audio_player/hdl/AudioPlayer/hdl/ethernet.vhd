@@ -168,7 +168,7 @@ architecture Behavioral of ethernet is
 	constant RX_BUFFER_ADDR : std_logic_vector(15 downto 0) := X"0800"; -- 2K tx, 22K rx
 
 	-- 8MB (multiply value below by 4 because 32-bit aligned)
-	constant SDRAM_BUFFER_SIZE : std_logic_vector(23 downto 0) := X"080000";
+	constant SDRAM_BUFFER_SIZE : std_logic_vector(23 downto 0) := X"100000";
 	
 	type ETHERNET_STATES is (
 		

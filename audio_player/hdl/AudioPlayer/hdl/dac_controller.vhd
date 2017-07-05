@@ -60,7 +60,7 @@ end dac_controller;
 architecture Behavioral of dac_controller is
 
 	-- 2MB (multiply value by 4 because 32-bit aligned)
-	constant SDRAM_BUFFER_SIZE : std_logic_vector(23 downto 0) := X"080000";
+	constant SDRAM_BUFFER_SIZE : std_logic_vector(23 downto 0) := X"100000";
 	
 
 	signal sram_read_reset_i : std_logic;
