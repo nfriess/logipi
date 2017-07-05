@@ -156,6 +156,16 @@ architecture Behavioral of audio_player is
 	signal dac_right_lowmid_data : std_logic;
 	signal dac_right_woofer_data : std_logic;
 	
+	signal volume_left_woofer : std_logic_vector(8 downto 0);
+	signal volume_left_lowmid : std_logic_vector(8 downto 0);
+	signal volume_left_uppermid : std_logic_vector(8 downto 0);
+	signal volume_left_tweeter : std_logic_vector(8 downto 0);
+	signal volume_right_woofer : std_logic_vector(8 downto 0);
+	signal volume_right_lowmid : std_logic_vector(8 downto 0);
+	signal volume_right_uppermid : std_logic_vector(8 downto 0);
+	signal volume_right_tweeter : std_logic_vector(8 downto 0);
+
+	
 	-- External 16MHz clock
 	signal clk16M : std_logic;
 	-- Generated 16MHz clock using PLL
@@ -666,6 +676,15 @@ ethernet_controller : entity work.ethernet
 		cmd_reset_dac => cmd_reset_dac,
 		cmd_user_sig => user_sig,
 		
+		volume_left_woofer_o => volume_left_woofer,
+		volume_left_lowmid_o => volume_left_lowmid,
+		volume_left_uppermid_o => volume_left_uppermid,
+		volume_left_tweeter_o => volume_left_tweeter,
+		volume_right_woofer_o => volume_right_woofer,
+		volume_right_lowmid_o => volume_right_lowmid,
+		volume_right_uppermid_o => volume_right_uppermid,
+		volume_right_tweeter_o => volume_right_tweeter,
+		
 		clk16Mwarning => clk16Mwarning_o,
 		clk16Mwarning_rst => clk16Mwarning_rst,
 		
@@ -721,6 +740,15 @@ dac_controller : entity work.dac_controller
 		
 		cmd_mute => cmd_mute,
 		cmd_pause => cmd_pause,
+		
+		volume_left_woofer_i => volume_left_woofer,
+		volume_left_lowmid_i => volume_left_lowmid,
+		volume_left_uppermid_i => volume_left_uppermid,
+		volume_left_tweeter_i => volume_left_tweeter,
+		volume_right_woofer_i => volume_right_woofer,
+		volume_right_lowmid_i => volume_right_lowmid,
+		volume_right_uppermid_i => volume_right_uppermid,
+		volume_right_tweeter_i => volume_right_tweeter,
 		
 		dbg_state => dbg_dac_state,
 		dbg_sram_read_addr => dbg_sram_read_addr,

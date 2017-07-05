@@ -50,6 +50,15 @@ entity dac_controller is
 			  cmd_mute : in STD_LOGIC;
 			  cmd_pause : in STD_LOGIC;
 			  
+			  volume_left_woofer_i : in STD_LOGIC_VECTOR(8 downto 0);
+			  volume_left_lowmid_i : in STD_LOGIC_VECTOR(8 downto 0);
+			  volume_left_uppermid_i : in STD_LOGIC_VECTOR(8 downto 0);
+			  volume_left_tweeter_i : in STD_LOGIC_VECTOR(8 downto 0);
+			  volume_right_woofer_i : in STD_LOGIC_VECTOR(8 downto 0);
+			  volume_right_lowmid_i : in STD_LOGIC_VECTOR(8 downto 0);
+			  volume_right_uppermid_i : in STD_LOGIC_VECTOR(8 downto 0);
+			  volume_right_tweeter_i : in STD_LOGIC_VECTOR(8 downto 0);
+
 			  dbg_state : out STD_LOGIC_VECTOR(15 downto 0);
 			  dbg_sram_read_addr : out STD_LOGIC_VECTOR(15 downto 0);
 			  dbg_sram_write_addr : out STD_LOGIC_VECTOR(15 downto 0)
@@ -93,6 +102,10 @@ architecture Behavioral of dac_controller is
 	signal right_lowmid_shift_reg : std_logic_vector(19 downto 0);
 	signal right_uppermid_shift_reg : std_logic_vector(19 downto 0);
 	signal right_woofer_shift_reg : std_logic_vector(19 downto 0);
+	
+	signal volume_left_woofer_16m : std_logic_vector(8 downto 0);
+	
+	signal multiplier_result : std_logic_vector(19 downto 0);
 	
 	signal sram_write_addr : std_logic_vector(SRAM_ADDR_SIZE-1 downto 0) := (others => '0');
 	signal sram_write_addr_16m : std_logic_vector(SRAM_ADDR_SIZE-1 downto 0) := (others => '0');
@@ -246,6 +259,12 @@ begin
 		end if;
 	end process;
 	
+	process(clk16M_slow)
+	begin
+		if rising_edge(clk16M_slow) then
+			volume_left_woofer_16m <= volume_left_woofer_i;
+		end if;
+	end process;
 	
 	
 	
@@ -383,7 +402,14 @@ begin
 					
 					if next_dac_load_reg = LEFT_WOOFER or sram_data_out(31) = '1' then
 						
-						left_woofer_load_reg <= sram_data_out(23 downto 4);
+						if volume_left_woofer_i = X"100" then
+							left_woofer_load_reg <= sram_data_out(23 downto 4);
+						elsif volume_left_woofer_i = X"000" then
+							left_woofer_load_reg <= (others => '0');
+						else
+							--left_woofer_load_reg <= std_logic_vector(to_signed(to_integer(signed(sram_data_out(23 downto 0))) * to_integer(unsigned(volume_left_woofer_i)), left_woofer_load_reg'length));
+							left_woofer_load_reg <= multiplier_result;
+						end if;
 						next_dac_load_reg <= RIGHT_WOOFER;
 						
 						-- When this state machine first starts, it will read SRAM address zero
@@ -766,7 +792,12 @@ begin
 		rst_i => sram_buff_need_more_rst
 	);
 	
-	
+	multiplier : entity work.volumemultiply
+	port map(
+		a => sram_data_out(23 downto 0),
+		b => volume_left_woofer_16m(7 downto 0),
+		p => multiplier_result
+	);
 
 end Behavioral;
 
