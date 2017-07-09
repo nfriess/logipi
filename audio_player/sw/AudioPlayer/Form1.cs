@@ -84,8 +84,7 @@ namespace AudioPlayer
         {
             uint count = 1;
 
-            // About 1/13 of a second
-            byte[] pktData = new byte[20100];
+            byte[] pktData = new byte[20088];
 
             bool firstPacket = true;
 
@@ -146,7 +145,7 @@ namespace AudioPlayer
             //uint count = (uint)(new Random().Next()) % (1<<20);
             uint count = (uint)(new Random().Next() | 0x10000) % (0x100000);
 
-            byte[] pktData = new byte[20100];
+            byte[] pktData = new byte[20088];
 
             bool firstPacket = true;
 
@@ -201,16 +200,16 @@ namespace AudioPlayer
             int bytesRead;
 
             // 1 second = 176,400 bytes at 16 bits (WAV file)
-            // 1 second = 793,800 bytes at 24 bits (packet data)
+            // 1 second = 1,058,400 bytes at 24 bits (packet data)
 
             // Max buffer is 22K in ethernet chip
 
-            // Read chunks out of WAV file such that 18/4 of the size
+            // Read chunks out of WAV file such that 24/4 of the size
             // is a nice round number
-            byte[] wavData = new byte[4468];
+            byte[] wavData = new byte[3348];
 
-            // 20,100 bytes is about 1/40 of a second
-            byte[] ethData = new byte[20106];
+            // 20,100 bytes is about 1/50 of a second
+            byte[] ethData = new byte[20088];
 
             bool firstPacket = true;
 
@@ -239,12 +238,12 @@ namespace AudioPlayer
 
                         int pktDataI = 0;
 
-                        // Swap little endian for big endian, expand into 20 bits, and multiply by 3 channels
+                        // Swap little endian for big endian, expand into 20 bits, and multiply by 4 channels
                         // (top 4 bits and bottom 4 bits are zeros)
                         for (int i = 0; i < bytesRead; i += 4)
                         {
-                            uint leftSample = ((uint)wavData[i + 1] << 12) | ((uint)wavData[i] << 4);
-                            uint rightSample = ((uint)wavData[i + 3] << 12) | ((uint)wavData[i + 2] << 4);
+                            uint leftSample = ((uint)wavData[i + 1] << 16) | ((uint)wavData[i] << 8);
+                            uint rightSample = ((uint)wavData[i + 3] << 16) | ((uint)wavData[i + 2] << 8);
 
                             ethData[pktDataI] = (byte)((leftSample >> 16) & 0xFF);
                             ethData[pktDataI + 1] = (byte)((leftSample >> 8) & 0xFF);
@@ -270,7 +269,15 @@ namespace AudioPlayer
                             ethData[pktDataI + 16] = (byte)((rightSample >> 8) & 0xFF);
                             ethData[pktDataI + 17] = (byte)(rightSample & 0xFF);
 
-                            pktDataI += 18;
+                            ethData[pktDataI + 18] = (byte)((leftSample >> 16) & 0xFF);
+                            ethData[pktDataI + 19] = (byte)((leftSample >> 8) & 0xFF);
+                            ethData[pktDataI + 20] = (byte)(leftSample & 0xFF);
+
+                            ethData[pktDataI + 21] = (byte)((rightSample >> 16) & 0xFF);
+                            ethData[pktDataI + 22] = (byte)((rightSample >> 8) & 0xFF);
+                            ethData[pktDataI + 23] = (byte)(rightSample & 0xFF);
+
+                            pktDataI += 24;
                         }
 
                         ethAudio.sendAudioData(ethData, pktDataI, firstPacket);

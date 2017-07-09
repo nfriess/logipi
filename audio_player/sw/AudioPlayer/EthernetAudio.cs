@@ -38,12 +38,6 @@ namespace AudioPlayer
     /// 
     /// while (...)
     /// {
-    ///     // Resend packets if needed
-    ///     if (eth.hasAmplifierMissedPacket())
-    ///     {
-    ///         eth.resendMissingPackets();
-    ///     }
-    ///     
     ///     eth.sendAudioData(data, false);
     ///     
     ///     Thread.Sleep(eth.getEstimatedSleepLength(data.Length));
@@ -64,6 +58,10 @@ namespace AudioPlayer
         public const UInt32 CMD_SET_SEQUENCE = 0x00000002;
         public const UInt32 CMD_PAUSE = 0x00000004;
         public const UInt32 CMD_RESET_I2S = 0x00000100;
+        public const UInt32 CMD_USER_SIG_OFF = 0x00010000;
+        public const UInt32 CMD_USER_SIG_ON = 0x00020000;
+
+        public const UInt32 STATUS_CLOCK_WARNING = 0x00000001;
 
 
         /// <summary>
@@ -116,6 +114,11 @@ namespace AudioPlayer
         /// A timer to fire off our disconnected event if we don't receive updates from the amplifier
         /// </summary>
         private Timer expectedStatusTimer;
+
+        /// <summary>
+        /// Additional status information sent from device
+        /// </summary>
+        private volatile UInt32 statusBitmask;
 
         private bool didConnectSender;
         private bool isMute;
@@ -206,10 +209,9 @@ namespace AudioPlayer
             return packetInProgress.Count;
         }
 
-        public bool hasAmplifierMissedPacket()
+        public UInt32 getStatusBitmask()
         {
-            // TODO: Instead try to use send-recv > pkt.size*N
-            return sendSequence != 0 && recvSequenceLast == recvSequence;
+            return statusBitmask;
         }
 
         /// <summary>
@@ -221,13 +223,13 @@ namespace AudioPlayer
         /// <returns></returns>
         public int getEstimatedSleepLength(int packetSize)
         {
-            // At 24 bits per sample, 6 channels...
+            // At 24 bits per sample, 8 channels...
             //
-            // 793,800 bytes will be needed per second
+            // 1,058,400 bytes will be needed per second
             //
 
             // We need to send this many packets per second
-            double pktsPerSec = (double)793800 / (double)packetSize;
+            double pktsPerSec = (double)1058400 / (double)packetSize;
 
             // For a total of 1000 ms we need to sleep this long
             int msPerSleep = (int)Math.Floor(1000.0 / pktsPerSec);
@@ -264,7 +266,11 @@ namespace AudioPlayer
                     throw new Exception("Have not received any status updates yet.");
             }
 
-            int retries = 15;
+            if ((statusBitmask & STATUS_CLOCK_WARNING) == STATUS_CLOCK_WARNING)
+                throw new Exception("The audio clock does not appear to be running.");
+
+            int START_RETRIES = 7;
+            int retries = START_RETRIES;
 
             int packetInProgressCount;
 
@@ -273,18 +279,17 @@ namespace AudioPlayer
                 packetInProgressCount = packetInProgress.Count;
             }
 
-            //while (retries > 0 && (hasAmplifierMissedPacket() && packetInProgressCount > 5) || packetInProgressCount > 20)
             while (retries > 0 && packetInProgressCount > 20)
             {
                 Debug.WriteLine(String.Format("{0:HH:mm:ss:fff}: Retry {4}.  Expected: {1:#,##0} but have {2:#,##0}, diff={3:#,##0}",
-                    DateTime.Now, sendSequence, recvSequence, (sendSequence - recvSequence), (6-retries)));
+                    DateTime.Now, sendSequence, recvSequence, (sendSequence - recvSequence), (START_RETRIES - retries + 1)));
 
                 resendMissingPackets();
 
                 retries--;
 
                 // Wait for next status to come in
-                Thread.Sleep(500);
+                //Thread.Sleep(500);
 
                 lock (packetInProgress)
                 {
@@ -418,6 +423,24 @@ namespace AudioPlayer
             isPaused = true;
         }
 
+        public void sendUserSignal(bool value)
+        {
+            uint bitmask;
+
+            if (value)
+                bitmask = CMD_USER_SIG_ON;
+            else
+                bitmask = CMD_USER_SIG_OFF;
+
+            if (isMute)
+                bitmask |= CMD_MUTE;
+
+            if (isPaused)
+                bitmask |= CMD_PAUSE;
+
+            sendCommand(bitmask, 0);
+        }
+
         private void sendCommand(UInt32 command, UInt32 sequence)
         {
             byte[] pktData = new byte[8];
@@ -446,6 +469,9 @@ namespace AudioPlayer
         /// </summary>
         public void resendMissingPackets()
         {
+
+            PacketData[] packets;
+
             lock (packetInProgress)
             {
 
@@ -453,96 +479,53 @@ namespace AudioPlayer
                     return;
 
 
-                int pktNum = 0;
-                PacketData[] packets = packetInProgress.ToArray();
-                PacketData pkt;
-
-                // We might have kept some extra full packets around...
-                while (pktNum < packets.Length)
-                {
-                    pkt = packets[pktNum];
-
-                    // Same check as dequeue except without the *3
-                    if (pkt.seq < recvSequence && (recvSequence - pkt.seq) >= (pkt.data.Length - 8))
-                    {
-                        pktNum++;
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-
-                if (pktNum == packets.Length)
-                    return;
-
-
-                // TODO: This is a hack to solve an issue with partial packets being
-                // recorded in the sequence counter (VHDL).  This will likely cause samples
-                // to go out of alignment.
-
-                pkt = packets[pktNum];
-
-                // Need to send a partial packet first
-                if (pkt.seq < recvSequence && (recvSequence - pkt.seq) < (pkt.data.Length - 8))
-                {
-                    // +8 because we skip the command and sequence
-                    UInt32 partialDataStart = recvSequence - pkt.seq + 8;
-                    byte[] partialData = new byte[pkt.data.Length - partialDataStart + 8];
-
-                    // Reset sequence counter
-                    sendSequence = pkt.seq + partialDataStart - 8;
-
-                    Debug.WriteLine(String.Format("Resend partial {0:#,##0} of len {1:#,##0}", sendSequence, partialData.Length - 8));
-
-                    // Command
-                    partialData[0] = 0;
-                    partialData[1] = 0;
-                    partialData[2] = 0;
-                    partialData[3] = 0;
-
-                    byte[] seqData = BitConverter.GetBytes(sendSequence);
-
-                    // Sequence
-                    partialData[4] = seqData[3];
-                    partialData[5] = seqData[2];
-                    partialData[6] = seqData[1];
-                    partialData[7] = seqData[0];
-
-                    Array.Copy(pkt.data, partialDataStart, partialData, 8, partialData.Length - 8);
-
-                    // Send packet
-                    udpSend.Send(partialData, partialData.Length);
-
-                    // Wait for amplifier to process the data
-                    Thread.Sleep(getEstimatedSleepLength(pkt.data.Length - 8));
-
-                    pktNum++;
-                }
-
-
-                while (pktNum < packets.Length)
-                {
-                    pkt = packets[pktNum];
-
-                    // Reset sequence counter
-                    sendSequence = pkt.seq;
-
-                    Debug.WriteLine(String.Format("Resend {0:#,##0} of len {1:#,##0}", sendSequence, pkt.data.Length - 8));
-
-                    // Send packet
-                    udpSend.Send(pkt.data, pkt.data.Length);
-
-                    // New sequence counter
-                    sendSequence = pkt.seq + ((uint)pkt.data.Length - 8);
-
-                    // Wait for amplifier to process the data
-                    Thread.Sleep(getEstimatedSleepLength(pkt.data.Length - 8));
-
-                    pktNum++;
-                }
+                packets = packetInProgress.ToArray();
 
             }
+
+            int pktNum = 0;
+            PacketData pkt;
+
+            // We might have kept some extra full packets around...
+            while (pktNum < packets.Length)
+            {
+                pkt = packets[pktNum];
+
+                // Same check as dequeue except without the *3
+                if (pkt.seq < recvSequence && (recvSequence - pkt.seq) >= (pkt.data.Length - 8))
+                {
+                    pktNum++;
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            if (pktNum == packets.Length)
+                return;
+
+            while (pktNum < packets.Length)
+            {
+                pkt = packets[pktNum];
+
+                // Reset sequence counter
+                sendSequence = pkt.seq;
+
+                //Debug.WriteLine(String.Format("Resend {0:#,##0} of len {1:#,##0}", sendSequence, pkt.data.Length - 8));
+
+                // Send packet
+                udpSend.Send(pkt.data, pkt.data.Length);
+
+                // New sequence counter
+                sendSequence = pkt.seq + ((uint)pkt.data.Length - 8);
+
+                // Wait for amplifier to process the data
+                Thread.Sleep(getEstimatedSleepLength(pkt.data.Length - 8));
+
+                pktNum++;
+            }
+
         }
 
         private void onStatusReceived(IAsyncResult res)
@@ -580,6 +563,15 @@ namespace AudioPlayer
 
             recvWindowSize = BitConverter.ToUInt32(windowData, 0);
 
+            byte[] statusData = new byte[4];
+            // Convert big endian to little endian
+            statusData[0] = data[11];
+            statusData[1] = data[10];
+            statusData[2] = data[9];
+            statusData[3] = data[8];
+
+            statusBitmask = BitConverter.ToUInt32(statusData, 0);
+
             if (!didConnectSender)
             {
                 IPEndPoint epSend = new IPEndPoint(ampIPAddress, 9000);
@@ -596,20 +588,27 @@ namespace AudioPlayer
                 catch (Exception ex) { }
             }
 
-            // TODO: This fails if a status update comes in too quickly...
+            // This fails if a status update comes in too quickly...
             // the first set of packets will be dequeued before the real
-            // ACK comes in
+            // ACK comes in.  A work-around is in the send method above
+            // where it waits for a litle bit after sending a reset command.
 
             lock (packetInProgress)
             {
                 while (packetInProgress.Count > 0)
                 {
 
-                    // TODO: A full packet is taken off the list before it is acknowledged.  How?
+                    ulong recvSeqLong = recvSequence;
 
                     PacketData pkt = packetInProgress.Peek();
-                    //if (pkt.seq < recvSequence && (recvSequence - pkt.seq) >= (pkt.data.Length - 8))
-                    if (pkt.seq < recvSequence && (recvSequence - pkt.seq) >= 3*(pkt.data.Length - 8))
+
+                    // Handles the case where the amp's sequence has wrapped around
+                    if (pkt.seq > 0xFFF00000 && recvSeqLong < 0x00080000)
+                    {
+                        recvSeqLong += 0x100000000;
+                    }
+
+                    if (pkt.seq < recvSeqLong && (recvSeqLong - pkt.seq) >= 3 * ((ulong)pkt.data.Length - 8))
                     {
                         packetInProgress.Dequeue();
                     }
