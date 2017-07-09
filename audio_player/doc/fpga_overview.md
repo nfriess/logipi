@@ -37,10 +37,6 @@ connected Raspberry Pi to monitor and debug the VHDL during development.
 In the final deployment there is no Raspberry Pi connected and so this
 code is not used, but remains compiled in.
 
-**NOTE:** Initially the code was written to use the I2S protocol instead
-of driving D-to-As directly.  Many parts of the code still reference i2s
-instead of dac.
-
 
 ## Interconnections
 

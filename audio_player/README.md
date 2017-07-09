@@ -1,4 +1,4 @@
-# Hifi Audio Player
+# Hi-fi Audio Player
 
 A friend of mine has been building Hi-fi audio systems for
 a very long time.  Before this project started, his current
@@ -20,7 +20,7 @@ audio amplifier design.  My friend has built some of the
 highest quality amplifiers around.
 
 For my part of this system, the only aspects that I need
-to know are that there are 6 amplifiers (channels), each
+to know are that there are 8 amplifiers (channels), each
 driving a speaker.  The input of an amplifier is an AD1862
 D-to-A, which accepts a 20-bit audio.  The Latch Enable
 pin is driven by a 44.1 KHz clock, which is divided down
@@ -32,28 +32,28 @@ My friend has written his own audio player program in
 C# that he currently uses to stream audio to the Hi-fi
 system.  The program reads in raw .WAV files containing
 2 channel, 16-bit, 44.1 KHz audio.  It then converts this
-to the 6-channel, 20-bit format that will be consumed by
+to the 8-channel, 20-bit format that will be consumed by
 the D-to-As.  It then sends this data over USB, to an
 FPGA that drives the D-to-As.
 
 The source code for my friend's audio player is not
-available here because that belongs to him.  The project
-here has a very simple C# program that will drive the
-FPGA on the Logi-PI over an Ethernet connection.  He has
-then taken the core class that handles all of the logic
-for the Ethernet protocol and integrated that into his
-audio player program.
+available in this repository because that belongs to him.
+The project here has a very simple C# program that will
+drive the FPGA on the Logi-PI over an Ethernet connection.
+He has then taken the core C# class that handles all of the
+logic for the Ethernet protocol and integrated that into
+his audio player program.
 
 ## Logi-Pi Board
 
 Everything in between the host PC and D-to-As, and the
-core of this project.
+central part of this project.
 
 Although the Logi-Pi board is often paired with a Raspberry
-Pi, the Pi is is actually not used in the final product.
-Instead, a Pi is used to program the flash chip on the
-Logi-PI board and was used to debug the VHDL by monitoring
-various registers defined in the VHDL.
+Pi, the Raspberry Pi is is actually not used in the final
+product. Instead, a Pi is used to program the flash chip on
+the Logi-PI board and was used to debug the VHDL by
+monitoring various registers defined in the VHDL.
 
 Other key components required for this project are:
 
@@ -61,7 +61,7 @@ Other key components required for this project are:
   Microchip ENC424J600 Ethernet controller.
 
 * An external 16.9344 MHz crystal to drive the FPGA (for
-  proper hifi audio).  The FPGA can generate an internal
+  proper hi-fi audio).  The FPGA can generate an internal
   clock that is very close to 16.9334 MHz for testing
   purposes.
 
@@ -99,7 +99,7 @@ as:
 
 **Licensed under the GNU GENERAL PUBLIC LICENSE version 2**
 
-Copyright (C) 2016  Nathan Friess
+Copyright (C) 2016-2017  Nathan Friess
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License

@@ -1,7 +1,12 @@
 ## SW0 (Switch 1)
 
-Set to '1' to use an external audio clock, or '0' to generate
+Set to ON to use an external audio clock, or OFF to generate
 a (very close) internal audio clock.
+
+## SW1 (Switch 2)
+
+Set to ON to bypass waiting for a DHCP-assigned IP address
+and immediately pick a link-local IP address.
 
 ## LED0
 
@@ -10,7 +15,9 @@ Will light up when the audio output is in MUTE.
 ## LED1
 
 Will light up when the Logi-Pi has an IP address assigned and
-will start sending status packets to the host PC.
+is sending status packets to the host PC.  When initializing,
+if the PmodNIC100 is not responding to commands then this LED
+will blink steadily until the FPGA is reset.
 
 ## PmodNIC100
 
