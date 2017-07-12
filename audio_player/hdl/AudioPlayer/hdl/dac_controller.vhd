@@ -104,8 +104,18 @@ architecture Behavioral of dac_controller is
 	signal right_woofer_shift_reg : std_logic_vector(19 downto 0);
 	
 	signal volume_left_woofer_16m : std_logic_vector(8 downto 0);
+	signal volume_left_lowmid_16m : std_logic_vector(8 downto 0);
+	signal volume_left_uppermid_16m : std_logic_vector(8 downto 0);
+	signal volume_left_tweeter_16m : std_logic_vector(8 downto 0);
+	signal volume_right_woofer_16m : std_logic_vector(8 downto 0);
+	signal volume_right_lowmid_16m : std_logic_vector(8 downto 0);
+	signal volume_right_uppermid_16m : std_logic_vector(8 downto 0);
+	signal volume_right_tweeter_16m : std_logic_vector(8 downto 0);
 	
-	signal multiplier_result : std_logic_vector(19 downto 0);
+	signal multiplier_ce : std_logic;
+	signal multiplier_sample : std_logic_vector(23 downto 0);
+	signal multiplier_volume : std_logic_vector(7 downto 0);
+	signal multiplier_result : std_logic_vector(23 downto 0);
 	
 	signal sram_write_addr : std_logic_vector(SRAM_ADDR_SIZE-1 downto 0) := (others => '0');
 	signal sram_write_addr_16m : std_logic_vector(SRAM_ADDR_SIZE-1 downto 0) := (others => '0');
@@ -263,8 +273,16 @@ begin
 	begin
 		if rising_edge(clk16M_slow) then
 			volume_left_woofer_16m <= volume_left_woofer_i;
+			volume_left_lowmid_16m <= volume_left_lowmid_i;
+			volume_left_uppermid_16m <= volume_left_uppermid_i;
+			volume_left_tweeter_16m <= volume_left_tweeter_i;
+			volume_right_woofer_16m <= volume_right_woofer_i;
+			volume_right_lowmid_16m <= volume_right_lowmid_i;
+			volume_right_uppermid_16m <= volume_right_uppermid_i;
+			volume_right_tweeter_16m <= volume_right_tweeter_i;
 		end if;
 	end process;
+	
 	
 	
 	
@@ -281,9 +299,8 @@ begin
 	dac_right_lowmid_o <= '0' when need_mute = '1' else right_lowmid_shift_reg(19);
 	dac_right_woofer_o <= '0' when need_mute = '1' else right_woofer_shift_reg(19);
 	
-
-
-
+	
+	
 	-- Main state machine to generate audio signals.
 	-- 
 	-- 1. Reduce 16.9344 MHz input clock down to bitclk and lrclk
@@ -315,6 +332,9 @@ begin
 			sram_read_addr <= (others => '1');
 			sram_buff_need_more_16_i <= '0';
 			next_dac_load_reg <= LEFT_WOOFER;
+			multiplier_sample <= (others => '0');
+			multiplier_volume <= (others => '0');
+			multiplier_ce <= '0';
 		elsif rising_edge(clk16M) then
 			
 			-- By default don't read from SRAM
@@ -359,6 +379,8 @@ begin
 				sram_read <= '0';
 				sram_read_addr <= (others => '1');
 				
+				multiplier_ce <= '0';
+				
 			else
 			
 				-- Shift register shifts on falling edge of bitclk
@@ -382,7 +404,11 @@ begin
 				
 				
 				-- Generate SRAM read signal and increment read address
-				if cmd_pause_16m = '0' and sram_buffer_empty_16m = '0' and clk16M_count < 8 then
+				-- 383 - 5 * 8 - 2 = 
+				if cmd_pause_16m = '0' and sram_buffer_empty_16m = '0' and
+					(clk16M_count = 341 or clk16M_count = 346 or clk16M_count = 351 or
+					 clk16M_count = 356 or clk16M_count = 361 or clk16M_count = 366 or
+					 clk16M_count = 371 or clk16M_count = 376) then
 					
 					-- Get next data from sram
 					sram_read_addr <= sram_read_addr + 1;
@@ -398,60 +424,123 @@ begin
 				
 				
 				-- Capture output of SRAM
-				if cmd_pause_16m = '0' and sram_buffer_empty_16m = '0' and clk16M_count > 0 and clk16M_count < 9 then
+				if cmd_pause_16m = '0' and sram_buffer_empty_16m = '0' and
+					(clk16M_count = 342 or clk16M_count = 347 or clk16M_count = 352 or
+					 clk16M_count = 357 or clk16M_count = 362 or clk16M_count = 367 or
+					 clk16M_count = 372 or clk16M_count = 377) then
 					
 					if next_dac_load_reg = LEFT_WOOFER or sram_data_out(31) = '1' then
+					
+						multiplier_sample <= sram_data_out(23 downto 0);
+						multiplier_volume <= volume_left_woofer_16m(7 downto 0);
 						
-						if volume_left_woofer_i = X"100" then
+						-- Turn on the multiplier for the first channel
+						multiplier_ce <= '1';
+						
+						if volume_left_woofer_16m(8) = '1' then
 							left_woofer_load_reg <= sram_data_out(23 downto 4);
-						elsif volume_left_woofer_i = X"000" then
+						elsif volume_left_woofer_16m = X"000" then
 							left_woofer_load_reg <= (others => '0');
-						else
-							--left_woofer_load_reg <= std_logic_vector(to_signed(to_integer(signed(sram_data_out(23 downto 0))) * to_integer(unsigned(volume_left_woofer_i)), left_woofer_load_reg'length));
-							left_woofer_load_reg <= multiplier_result;
 						end if;
+						
 						next_dac_load_reg <= RIGHT_WOOFER;
 						
 						-- When this state machine first starts, it will read SRAM address zero
 						-- where the left woofer sample should be stored.  The line below will
-						-- have no effect because count will be set to 2 as well.
+						-- have no effect because count will be set to 343 as well.
 						-- If the state machine below and this one get out of sync, then
 						-- this line will force this state machine to get back in sync.
-						clk16M_count <= std_logic_vector(to_unsigned(2, clk16M_count'length));
+						clk16M_count <= std_logic_vector(to_unsigned(343, clk16M_count'length));
 					
 					elsif next_dac_load_reg = RIGHT_WOOFER then
 						
-						right_woofer_load_reg <= sram_data_out(23 downto 4);
+						multiplier_sample <= sram_data_out(23 downto 0);
+						multiplier_volume <= volume_right_woofer_16m(7 downto 0);
+						
+						if volume_right_woofer_16m(8) = '1' then
+							right_woofer_load_reg <= sram_data_out(23 downto 4);
+						elsif volume_right_woofer_16m = X"000" then
+							right_woofer_load_reg <= (others => '0');
+						end if;
+						
 						next_dac_load_reg <= LEFT_LOWMIDRANGE;
 					
 					elsif next_dac_load_reg = LEFT_LOWMIDRANGE then
 						
-						left_lowmid_load_reg <= sram_data_out(23 downto 4);
+						multiplier_sample <= sram_data_out(23 downto 0);
+						multiplier_volume <= volume_left_lowmid_16m(7 downto 0);
+						
+						if volume_left_lowmid_16m(8) = '1' then
+							left_lowmid_load_reg <= sram_data_out(23 downto 4);
+						elsif volume_left_lowmid_16m = X"000" then
+							left_lowmid_load_reg <= (others => '0');
+						end if;
+						
 						next_dac_load_reg <= RIGHT_LOWMIDRANGE;
-					
+						
 					elsif next_dac_load_reg = RIGHT_LOWMIDRANGE then
 						
-						right_lowmid_load_reg <= sram_data_out(23 downto 4);
+						multiplier_sample <= sram_data_out(23 downto 0);
+						multiplier_volume <= volume_right_lowmid_16m(7 downto 0);
+						
+						if volume_right_lowmid_16m(8) = '1' then
+							right_lowmid_load_reg <= sram_data_out(23 downto 4);
+						elsif volume_right_lowmid_16m = X"000" then
+							right_lowmid_load_reg <= (others => '0');
+						end if;
+						
 						next_dac_load_reg <= LEFT_UPPERMIDRANGE;
 					
 					elsif next_dac_load_reg = LEFT_UPPERMIDRANGE then
 						
-						left_uppermid_load_reg <= sram_data_out(23 downto 4);
+						multiplier_sample <= sram_data_out(23 downto 0);
+						multiplier_volume <= volume_left_uppermid_16m(7 downto 0);
+						
+						if volume_left_uppermid_16m(8) = '1' then
+							left_uppermid_load_reg <= sram_data_out(23 downto 4);
+						elsif volume_left_uppermid_16m = X"000" then
+							left_uppermid_load_reg <= (others => '0');
+						end if;
+						
 						next_dac_load_reg <= RIGHT_UPPERMIDRANGE;
 					
 					elsif next_dac_load_reg = RIGHT_UPPERMIDRANGE then
 						
-						right_uppermid_load_reg <= sram_data_out(23 downto 4);
+						multiplier_sample <= sram_data_out(23 downto 0);
+						multiplier_volume <= volume_right_uppermid_16m(7 downto 0);
+						
+						if volume_right_uppermid_16m(8) = '1' then
+							right_uppermid_load_reg <= sram_data_out(23 downto 4);
+						elsif volume_right_uppermid_16m = X"000" then
+							right_uppermid_load_reg <= (others => '0');
+						end if;
+						
 						next_dac_load_reg <= LEFT_TWEETER;
 					
 					elsif next_dac_load_reg = LEFT_TWEETER then
 						
-						left_tweeter_load_reg <= sram_data_out(23 downto 4);
+						multiplier_sample <= sram_data_out(23 downto 0);
+						multiplier_volume <= volume_left_tweeter_16m(7 downto 0);
+						
+						if volume_left_tweeter_16m(8) = '1' then
+							left_tweeter_load_reg <= sram_data_out(23 downto 4);
+						elsif volume_left_tweeter_16m = X"000" then
+							left_tweeter_load_reg <= (others => '0');
+						end if;
+						
 						next_dac_load_reg <= RIGHT_TWEETER;
 					
 					elsif next_dac_load_reg = RIGHT_TWEETER then
 						
-						right_tweeter_load_reg <= sram_data_out(23 downto 4);
+						multiplier_sample <= sram_data_out(23 downto 0);
+						multiplier_volume <= volume_right_tweeter_16m(7 downto 0);
+						
+						if volume_right_tweeter_16m(8) = '1' then
+							right_tweeter_load_reg <= sram_data_out(23 downto 4);
+						elsif volume_right_tweeter_16m = X"000" then
+							right_tweeter_load_reg <= (others => '0');
+						end if;
+						
 						next_dac_load_reg <= LEFT_WOOFER;
 					
 					end if;
@@ -459,12 +548,40 @@ begin
 				end if; -- SRAM read capture
 				
 				
-				-- TODO: Technically this is 1 clock cycle later than we should,
-				-- as bitclk changes at 8 above
+				-- If the left woofer was loaded into the multiplier at state 342,
+				-- then 5 cycles later is 347, when we have the result
+				if cmd_pause_16m = '0' and sram_buffer_empty_16m = '0' and multiplier_volume /= X"00" then
+					
+					if clk16M_count = 347 then
+						left_woofer_load_reg <= multiplier_result(23 downto 4);
+					elsif clk16M_count = 352 then
+						right_woofer_load_reg <= multiplier_result(23 downto 4);
+					elsif clk16M_count = 357 then
+						left_lowmid_load_reg <= multiplier_result(23 downto 4);
+					elsif clk16M_count = 362 then
+						right_lowmid_load_reg <= multiplier_result(23 downto 4);
+					elsif clk16M_count = 367 then
+						left_uppermid_load_reg <= multiplier_result(23 downto 4);
+					elsif clk16M_count = 372 then
+						right_uppermid_load_reg <= multiplier_result(23 downto 4);
+					elsif clk16M_count = 377 then
+						left_tweeter_load_reg <= multiplier_result(23 downto 4);
+					elsif clk16M_count = 382 then
+						right_tweeter_load_reg <= multiplier_result(23 downto 4);
+					end if;
+					
+				end if;
+				
+				
+				-- When the last channel is complete we can turn off the multiplier
+				if clk16M_count = 382 then
+					multiplier_ce <= '0';
+				end if;
+				
 				
 				-- Load shift registers.  Could also be state 64, which would cause
 				-- zeros to be shifted in at first rather than repeating the MSB
-				if clk16M_count = 9 then
+				if clk16M_count = 8 then
 					
 					left_woofer_shift_reg <= left_woofer_load_reg;
 					right_woofer_shift_reg <= right_woofer_load_reg;
@@ -792,10 +909,12 @@ begin
 		rst_i => sram_buff_need_more_rst
 	);
 	
-	multiplier : entity work.volumemultiply
+	multiplier : entity work.volumemultiplier
 	port map(
-		a => sram_data_out(23 downto 0),
-		b => volume_left_woofer_16m(7 downto 0),
+		clk => clk16M,
+		ce => multiplier_ce,
+		a => multiplier_sample,
+		b => multiplier_volume,
 		p => multiplier_result
 	);
 
