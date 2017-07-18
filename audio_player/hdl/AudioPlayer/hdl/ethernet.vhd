@@ -42,6 +42,15 @@ entity ethernet is
 				cmd_reset_dac : out STD_LOGIC;
 				cmd_user_sig : out STD_LOGIC;
 				
+				volume_left_woofer_o : out STD_LOGIC_VECTOR(8 downto 0);
+				volume_left_lowmid_o : out STD_LOGIC_VECTOR(8 downto 0);
+				volume_left_uppermid_o : out STD_LOGIC_VECTOR(8 downto 0);
+				volume_left_tweeter_o : out STD_LOGIC_VECTOR(8 downto 0);
+				volume_right_woofer_o : out STD_LOGIC_VECTOR(8 downto 0);
+				volume_right_lowmid_o : out STD_LOGIC_VECTOR(8 downto 0);
+				volume_right_uppermid_o : out STD_LOGIC_VECTOR(8 downto 0);
+				volume_right_tweeter_o : out STD_LOGIC_VECTOR(8 downto 0);
+				
 				
 				clk16Mwarning : in STD_LOGIC;
 				clk16Mwarning_rst : out STD_LOGIC;
@@ -205,6 +214,8 @@ architecture Behavioral of ethernet is
 		RX_AUDIO_DATA_SDRAM_COMPLETE, RX_UDP_RESUME_FRAGMENT,
 		RX_UDP_RESUME_FRAGMENT_FROM_REG,
 		
+		RX_VOLUME_1, RX_VOLUME_2, RX_VOLUME_3, RX_VOLUME_4,
+		
 		RX_SET_ERXTAIL, RX_DECPKT,
 		
 		TX_STATUS_PTR, TX_STATUS_DST_ADDR_1, TX_STATUS_DST_ADDR_2,
@@ -366,6 +377,16 @@ architecture Behavioral of ethernet is
 	signal audio_tmp_sequence : std_logic_vector(31 downto 0);
 	
 	
+	signal volume_left_woofer : std_logic_vector(8 downto 0);
+	signal volume_left_lowmid : std_logic_vector(8 downto 0);
+	signal volume_left_uppermid : std_logic_vector(8 downto 0);
+	signal volume_left_tweeter : std_logic_vector(8 downto 0);
+	signal volume_right_woofer : std_logic_vector(8 downto 0);
+	signal volume_right_lowmid : std_logic_vector(8 downto 0);
+	signal volume_right_uppermid : std_logic_vector(8 downto 0);
+	signal volume_right_tweeter : std_logic_vector(8 downto 0);
+	
+	
 	-- How long to wait for DHCP response (seconds)
 	signal dhcp_resp_timeout : std_logic_vector(3 downto 0);
 	-- How many retries to send
@@ -440,6 +461,16 @@ begin
 	sdram_cycle <= sdram_cycle_s;
 	sdram_strobe <= sdram_strobe_s;
 	
+	volume_left_woofer_o <= volume_left_woofer;
+	volume_left_lowmid_o <= volume_left_lowmid;
+	volume_left_uppermid_o <= volume_left_uppermid;
+	volume_left_tweeter_o <= volume_left_tweeter;
+	volume_right_woofer_o <= volume_right_woofer;
+	volume_right_lowmid_o <= volume_right_lowmid;
+	volume_right_uppermid_o <= volume_right_uppermid;
+	volume_right_tweeter_o <= volume_right_tweeter;
+
+	
 	dbg_rx_current_packet <= rx_current_packet;
 	dbg_rx_next_packet <= rx_next_packet;
 	dbg_rx_next_rxtail <= rx_next_rxtail;
@@ -513,6 +544,14 @@ begin
 		start_of_frame <= '1';
 		cmd_user_sig <= '0';
 		clk16Mwarning_rst <= '0';
+		volume_left_woofer <= (others => '1');
+		volume_left_lowmid <= (others => '1');
+		volume_left_uppermid <= (others => '1');
+		volume_left_tweeter <= (others => '1');
+		volume_right_woofer <= (others => '1');
+		volume_right_lowmid <= (others => '1');
+		volume_right_uppermid <= (others => '1');
+		volume_right_tweeter <= (others => '1');
 	elsif rising_edge(sys_clk) then
 	
 		ten_hz_int_rst <= '0';
@@ -1809,7 +1848,21 @@ begin
 				end if;
 				
 				
-				if audio_cmd(31) = '0' and (audio_cmd(1) = '1' or audio_next_sequence = spi_readdata) then
+				if audio_cmd(30) = '1' then
+					
+					-- Read 4 bytes of volume levels
+					
+					-- TODO: Check packet length
+					
+					spi_writedata <= X"00" & X"00" & X"00" & X"00";
+					spi_datacount <= "100";
+					spi_auto_disable <= '0';
+					
+					next_state <= RX_VOLUME_1;
+					state <= STARTSPI;
+					
+					
+				elsif audio_cmd(31) = '0' and (audio_cmd(1) = '1' or audio_next_sequence = spi_readdata) then
 				
 					-- First fragment so always assume there was no audio data in between
 					inter_packet_data_len <= (others => '0');
@@ -2093,6 +2146,54 @@ begin
 				next_state <= RX_AUDIO_DATA_WAIT_SDRAM;
 				state <= STARTSPI;
 				
+				
+				
+			when RX_VOLUME_1 =>
+				-- First two 9-bit channel volume controls
+				
+				volume_left_woofer <= spi_readdata(24 downto 16);
+				volume_left_lowmid <= spi_readdata(8 downto 0);
+				
+				spi_writedata <= X"00" & X"00" & X"00" & X"00";
+				spi_datacount <= "100";
+				spi_auto_disable <= '0';
+				
+				next_state <= RX_VOLUME_2;
+				state <= STARTSPI;
+				
+			when RX_VOLUME_2 =>
+				-- Next two 9-bit channel volume controls
+				
+				volume_left_uppermid <= spi_readdata(24 downto 16);
+				volume_left_tweeter <= spi_readdata(8 downto 0);
+				
+				spi_writedata <= X"00" & X"00" & X"00" & X"00";
+				spi_datacount <= "100";
+				spi_auto_disable <= '0';
+				
+				next_state <= RX_VOLUME_3;
+				state <= STARTSPI;
+				
+			when RX_VOLUME_3 =>
+				-- Next two 9-bit channel volume controls
+				
+				volume_right_woofer <= spi_readdata(24 downto 16);
+				volume_right_lowmid <= spi_readdata(8 downto 0);
+				
+				spi_writedata <= X"00" & X"00" & X"00" & X"00";
+				spi_datacount <= "100";
+				spi_auto_disable <= '1';
+				
+				next_state <= RX_VOLUME_4;
+				state <= STARTSPI;
+				
+			when RX_VOLUME_4 =>
+				-- Last two 9-bit channel volume controls
+				
+				volume_right_uppermid <= spi_readdata(24 downto 16);
+				volume_right_tweeter <= spi_readdata(8 downto 0);
+				
+				state <= RX_SET_ERXTAIL;				
 				
 				
 				

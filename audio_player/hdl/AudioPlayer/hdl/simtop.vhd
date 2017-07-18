@@ -17,7 +17,7 @@ use work.logi_wishbone_pack.all ;
 use work.logi_wishbone_peripherals_pack.all ;
 use work.verilog_compat.all ;
 
-entity audio_player is
+entity simtop is
 port( OSC_FPGA : in std_logic;
 
 		--onboard
@@ -52,9 +52,9 @@ port( OSC_FPGA : in std_logic;
 		SYS_SPI_SCK, RP_SPI_CE0N, SYS_SPI_MOSI : in std_logic ;
 		SYS_SPI_MISO : out std_logic
 );
-end audio_player;
+end simtop;
 
-architecture Behavioral of audio_player is
+architecture Behavioral of simtop is
 
 
 	signal sys_reset, sys_resetn,sys_clk, clock_locked : std_logic ;
@@ -196,7 +196,7 @@ begin
 sys_reset <= NOT PB(0); 
 sys_resetn <= NOT sys_reset ; -- for preipherals with active low reset
 
-sys_clk <= clk_100Mhz;
+sys_clk <= OSC_FPGA;
 
 LED(0) <= dac_mute;
 --LED(1) <= '0';
@@ -305,17 +305,17 @@ begin
 	sdram_buffer_empty <= '0';
 	
 	-- This must match the bits in SDRAM_BUFFER_SIZE exactly so it can wrap properly
-	if dac_sdram_address(22 downto 2) = "11111111111111111111" and eth_sdram_complete_address(22 downto 2) = X"00000" then
+	if dac_sdram_address(21 downto 2) = "1111111111111111111" and eth_sdram_complete_address(21 downto 2) = X"00000" then
 		sdram_buffer_empty <= '1';
-	elsif dac_sdram_address(22 downto 2) = (eth_sdram_complete_address(22 downto 2) - 1) then
+	elsif dac_sdram_address(21 downto 2) = (eth_sdram_complete_address(21 downto 2) - 1) then
 		sdram_buffer_empty <= '1';
 	end if;
 	
-	if dac_sdram_address(22 downto 2) >= eth_sdram_complete_address(22 downto 2) then
-		sdram_size_avail <= std_logic_vector(to_unsigned(to_integer(unsigned(dac_sdram_address(22 downto 2))) - to_integer(unsigned(eth_sdram_complete_address(22 downto 2))), sdram_size_avail'length));
+	if dac_sdram_address(21 downto 2) >= eth_sdram_complete_address(21 downto 2) then
+		sdram_size_avail <= std_logic_vector(to_unsigned(to_integer(unsigned(dac_sdram_address(21 downto 2))) - to_integer(unsigned(eth_sdram_complete_address(21 downto 2))), sdram_size_avail'length));
 	else
-		-- 16#100000# is SDRAM_BUFFER_SIZE
-		sdram_size_avail <= std_logic_vector(to_unsigned(16#100000# - (to_integer(unsigned(eth_sdram_complete_address(22 downto 2))) - to_integer(unsigned(dac_sdram_address(22 downto 2)))), sdram_size_avail'length));
+		-- 16#80000# is SDRAM_BUFFER_SIZE
+		sdram_size_avail <= std_logic_vector(to_unsigned(16#80000# - (to_integer(unsigned(eth_sdram_complete_address(21 downto 2))) - to_integer(unsigned(dac_sdram_address(21 downto 2)))), sdram_size_avail'length));
 	end if;
 	
 end process;
@@ -327,7 +327,7 @@ begin
 	
 	sdram_buffer_below_minimum <= '0';
 	
-	-- At least 0.5 second in buffer (SDRAM_BUFFER_SIZE - (44100 Hz * 8 channels * 1 word) / 2)
+	-- At least 0.5 second in buffer (0x080000 - (44100 Hz * 8 channels * 1 word) / 2)
 	-- Changed to be very small
 	if sdram_size_avail > X"30000" then 
 		sdram_buffer_below_minimum <= '1';
@@ -530,81 +530,6 @@ end process;
 
 									      
 										  
--- Debug registers that the Raspberry PI can read/write, that
--- are connected to various signals (mostly read-only)
-register0 : wishbone_register
-	generic map(nb_regs => 27)
-	 port map
-	 (
-		  -- Syscon signals
-		  gls_reset   => sys_reset ,
-		  gls_clk     => sys_clk ,
-		  -- Wishbone signals
-		  wbs_address      =>  intercon_register_wbm_address(15 downto 0),
-		  wbs_writedata => intercon_register_wbm_writedata,
-		  wbs_readdata  => intercon_register_wbm_readdata,
-		  wbs_strobe    => intercon_register_wbm_strobe,
-		  wbs_cycle     => intercon_register_wbm_cycle,
-		  wbs_write     => intercon_register_wbm_write,
-		  wbs_ack       => intercon_register_wbm_ack,
-		 
-		  -- out signals
-		  reg_out(0) => zzdummy0,
-		  reg_out(1) => reg_sdram_data_o, -- sdram data
-		  reg_out(2) => reg_sdram_addr_h, -- address high
-		  reg_out(3) => reg_sdram_addr_l, -- address low
-		  reg_out(4) => reg_sdram_ctl_o, -- control:  bit 1 = wren, bit 1 = go
-		  reg_out(5) => zzdummy1,
-		  reg_out(6) => zzdummy2,
-		  reg_out(7) => zzdummy3,
-		  reg_out(8) => zzdummy4,
-		  reg_out(9) => zzdummy5,
-		  reg_out(10) => zzdummy6,
-		  reg_out(11) => zzdummy7,
-		  reg_out(12) => zzdummy8,
-		  reg_out(13) => zzdummy9,
-		  reg_out(14) => zzdummy10,
-		  reg_out(15) => zzdummy11,
-		  reg_out(16) => zzdummy12,
-		  reg_out(17) => zzdummy13,
-		  reg_out(18) => zzdummy14,
-		  reg_out(19) => zzdummy15,
-		  reg_out(20) => zzdummy16,
-		  reg_out(21) => zzdummy17,
-		  reg_out(22) => zzdummy18,
-		  reg_out(23) => zzdummy19,
-		  reg_out(24) => zzdummy20,
-		  reg_out(25) => zzdummy21,
-		  reg_out(26) => zzdummy22,
-		 
-		  reg_in(0) => X"DEAD", -- Magic word to verify that the FPGA is loaded
-		  reg_in(1) => reg_sdram_data_i,
-		  reg_in(2) => reg_sdram_addr_h,
-		  reg_in(3) => reg_sdram_addr_l,
-		  reg_in(4) => reg_sdram_ctl_i,
-		  reg_in(5) => dbg_eth_state,
-		  reg_in(6) => eth_sdram_complete_address(31 downto 16),
-		  reg_in(7) => eth_sdram_complete_address(15 downto 0),
-		  reg_in(8) => sdram_buffer_empty & dbg_dac_state(14 downto 0),
-		  reg_in(9) => dac_sdram_address(31 downto 16),
-		  reg_in(10) => dac_sdram_address(15 downto 0),
-		  reg_in(11) => dbg_sdram_bus_state,
-		  reg_in(12) => X"00" & sdram_size_avail(23 downto 16),
-		  reg_in(13) => sdram_size_avail(15 downto 0),
-		  reg_in(14) => dbg_eth_rx_current_packet,
-		  reg_in(15) => dbg_eth_rx_next_packet,
-		  reg_in(16) => dbg_eth_rx_next_rxtail,
-		  reg_in(17) => dbg_eth_pkt_len,
-		  reg_in(18) => dbg_spi_state,
-		  reg_in(19) => dbg_sram_read_addr,
-		  reg_in(20) => dbg_sram_write_addr,
-		  reg_in(21) => dbg_eth_next_sequence,
-		  reg_in(22) => dbg_eth_audio_cmd,
-		  reg_in(23) => dbg_ip_ident,
-		  reg_in(24) => dbg_ip_frag_offset,
-		  reg_in(25) => dbg_spi_readdata,
-		  reg_in(26) => dbg_sdram_state
-	 );
 
 
 -- SDRAM addressing is 25 bits total... HOWEVER
@@ -796,44 +721,7 @@ port map (
  );
 
 	
-PLL_BASE_inst : PLL_BASE generic map (
-      BANDWIDTH      => "OPTIMIZED",        -- "HIGH", "LOW" or "OPTIMIZED" 
-      CLKFBOUT_MULT  => 12 ,                 -- Multiply value for all CLKOUT clock outputs (1-64)
-      CLKFBOUT_PHASE => 0.0,                -- Phase offset in degrees of the clock feedback output (0.0-360.0).
-      CLKIN_PERIOD   => 20.00,              -- Input clock period in ns to ps resolution (i.e. 33.333 is 30 MHz).
-      -- CLKOUT0_DIVIDE - CLKOUT5_DIVIDE: Divide amount for CLKOUT# clock output (1-128)
-      CLKOUT0_DIVIDE => 6,       CLKOUT1_DIVIDE =>1,
-      CLKOUT2_DIVIDE => 1,       CLKOUT3_DIVIDE => 1,
-      CLKOUT4_DIVIDE => 1,       CLKOUT5_DIVIDE => 1,
-      -- CLKOUT0_DUTY_CYCLE - CLKOUT5_DUTY_CYCLE: Duty cycle for CLKOUT# clock output (0.01-0.99).
-      CLKOUT0_DUTY_CYCLE => 0.5, CLKOUT1_DUTY_CYCLE => 0.5,
-      CLKOUT2_DUTY_CYCLE => 0.5, CLKOUT3_DUTY_CYCLE => 0.5,
-      CLKOUT4_DUTY_CYCLE => 0.5, CLKOUT5_DUTY_CYCLE => 0.5,
-      -- CLKOUT0_PHASE - CLKOUT5_PHASE: Output phase relationship for CLKOUT# clock output (-360.0-360.0).
-      CLKOUT0_PHASE => 0.0,      CLKOUT1_PHASE => 0.0, -- Capture clock
-      CLKOUT2_PHASE => 0.0,      CLKOUT3_PHASE => 0.0,
-      CLKOUT4_PHASE => 0.0,      CLKOUT5_PHASE => 0.0,
-      
-      CLK_FEEDBACK => "CLKFBOUT",           -- Clock source to drive CLKFBIN ("CLKFBOUT" or "CLKOUT0")
-      COMPENSATION => "SYSTEM_SYNCHRONOUS", -- "SYSTEM_SYNCHRONOUS", "SOURCE_SYNCHRONOUS", "EXTERNAL" 
-      DIVCLK_DIVIDE => 1,                   -- Division value for all output clocks (1-52)
-      REF_JITTER => 0.1,                    -- Reference Clock Jitter in UI (0.000-0.999).
-      RESET_ON_LOSS_OF_LOCK => FALSE        -- Must be set to FALSE
-   ) port map (
-      CLKFBOUT => clkfb, -- 1-bit output: PLL_BASE feedback output
-      -- CLKOUT0 - CLKOUT5: 1-bit (each) output: Clock outputs
-      CLKOUT0 => clk_100Mhz_pll,      CLKOUT1 => open,
-      CLKOUT2 => open,      CLKOUT3 => open,
-      CLKOUT4 => open,      CLKOUT5 => open,
-      LOCKED  => clock_locked,  -- 1-bit output: PLL_BASE lock status output
-      CLKFBIN => clkfb, -- 1-bit input: Feedback clock input
-      CLKIN   => osc_buff,  -- 1-bit input: Clock input
-      RST     => '0'    -- 1-bit input: Reset input
-   );
 
-    -- Buffering of clocks
-	BUFG_1 : BUFG port map (O => osc_buff,    I => OSC_FPGA);
-	BUFG_2 : BUFG port map (O => clk_100Mhz,    I => clk_100Mhz_pll);
 	
 
 end Behavioral;
