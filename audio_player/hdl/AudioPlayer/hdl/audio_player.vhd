@@ -20,7 +20,6 @@ use work.verilog_compat.all ;
 entity audio_player is
 port( OSC_FPGA : in std_logic;
 
-		--onboard
 		PB : in std_logic_vector(1 downto 0);
 		SW : in std_logic_vector(1 downto 0);
 		LED : out std_logic_vector(1 downto 0);	
@@ -35,7 +34,6 @@ port( OSC_FPGA : in std_logic;
 		--i2c
 		--SYS_SCL, SYS_SDA : inout std_logic ;
 		
-		-- sdram
 		SDRAM_CKE : out std_logic;
 		SDRAM_CLK : out std_logic;
 		SDRAM_nCAS : out std_logic;
@@ -48,13 +46,16 @@ port( OSC_FPGA : in std_logic;
 		
 		RP_GPIO_GEN2 : out std_logic;
 		
-		--spi
 		SYS_SPI_SCK, RP_SPI_CE0N, SYS_SPI_MOSI : in std_logic ;
 		SYS_SPI_MISO : out std_logic
 );
 end audio_player;
 
 architecture Behavioral of audio_player is
+
+	-- Size is in 32-bit words, 4 MByte
+	constant SDRAM_BUFFER_SIZE : std_logic_vector(23 downto 0) := X"100000";
+
 
 
 	signal sys_reset, sys_resetn,sys_clk, clock_locked : std_logic ;
@@ -189,7 +190,7 @@ architecture Behavioral of audio_player is
 	signal reg_sdram_data_o, reg_sdram_data_i, reg_sdram_addr_h, reg_sdram_addr_l, reg_sdram_ctl_o, reg_sdram_ctl_i : std_logic_vector(15 downto 0);
 	signal dbg_eth_state, dbg_dac_state, dbg_sdram_bus_state, dbg_eth_rx_current_packet, dbg_eth_rx_next_packet : std_logic_vector(15 downto 0);
 	signal dbg_eth_rx_next_rxtail, dbg_eth_pkt_len, dbg_spi_state, dbg_sram_read_addr, dbg_sram_write_addr : std_logic_vector(15 downto 0);
-	signal dbg_eth_next_sequence, dbg_eth_audio_cmd, dbg_ip_ident, dbg_ip_frag_offset, dbg_spi_readdata : std_logic_vector(15 downto 0);
+	signal dbg_eth_next_sequence, dbg_ip_ident, dbg_ip_frag_offset, dbg_spi_readdata : std_logic_vector(15 downto 0);
 	signal dbg_sdram_state : std_logic_vector(15 downto 0);
 begin
 
@@ -305,17 +306,16 @@ begin
 	sdram_buffer_empty <= '0';
 	
 	-- This must match the bits in SDRAM_BUFFER_SIZE exactly so it can wrap properly
-	if dac_sdram_address(22 downto 2) = "11111111111111111111" and eth_sdram_complete_address(22 downto 2) = X"00000" then
+	if dac_sdram_address(20 downto 0) = std_logic_vector(to_unsigned(to_integer(unsigned(SDRAM_BUFFER_SIZE)) - 1, 21)) and eth_sdram_complete_address(20 downto 0) = X"00000" then
 		sdram_buffer_empty <= '1';
-	elsif dac_sdram_address(22 downto 2) = (eth_sdram_complete_address(22 downto 2) - 1) then
+	elsif dac_sdram_address(20 downto 0) = (eth_sdram_complete_address(20 downto 0) - 1) then
 		sdram_buffer_empty <= '1';
 	end if;
 	
-	if dac_sdram_address(22 downto 2) >= eth_sdram_complete_address(22 downto 2) then
-		sdram_size_avail <= std_logic_vector(to_unsigned(to_integer(unsigned(dac_sdram_address(22 downto 2))) - to_integer(unsigned(eth_sdram_complete_address(22 downto 2))), sdram_size_avail'length));
+	if dac_sdram_address(20 downto 0) >= eth_sdram_complete_address(20 downto 0) then
+		sdram_size_avail <= std_logic_vector(to_unsigned(to_integer(unsigned(dac_sdram_address(20 downto 0))) - to_integer(unsigned(eth_sdram_complete_address(20 downto 0))), sdram_size_avail'length));
 	else
-		-- 16#100000# is SDRAM_BUFFER_SIZE
-		sdram_size_avail <= std_logic_vector(to_unsigned(16#100000# - (to_integer(unsigned(eth_sdram_complete_address(22 downto 2))) - to_integer(unsigned(dac_sdram_address(22 downto 2)))), sdram_size_avail'length));
+		sdram_size_avail <= std_logic_vector(to_unsigned(to_integer(unsigned(SDRAM_BUFFER_SIZE)) - (to_integer(unsigned(eth_sdram_complete_address(20 downto 0))) - to_integer(unsigned(dac_sdram_address(20 downto 0)))), sdram_size_avail'length));
 	end if;
 	
 end process;
@@ -449,14 +449,14 @@ begin
 					
 					if dac_sdram_cycle = '1' then
 						sdram_bus_state <= DAC;
-						sdram_address <= dac_sdram_address;
+						sdram_address <= dac_sdram_address(29 downto 0) & "00";
 						sdram_bitmask <= dac_sdram_bitmask;
 						sdram_cycle <= '1';
 						sdram_strobe <= dac_sdram_strobe;
 						sdram_write <= '0';
 					elsif dac_sdram_cycle = '0' and eth_sdram_cycle = '1' then
 						sdram_bus_state <= ETHERNET;
-						sdram_address <= eth_sdram_address;
+						sdram_address <= eth_sdram_address(29 downto 0) & "00";
 						sdram_bitmask <= eth_sdram_bitmask;
 						sdram_writedata <= eth_sdram_writedata;
 						sdram_cycle <= '1';
@@ -476,7 +476,7 @@ begin
 					dbg_sdram_bus_state <= dac_sdram_cycle & eth_sdram_cycle & rpi_sdram_cycle & sdram_stall & sdram_strobe & sdram_ack & "00" & X"02";
 					
 					sdram_strobe <= dac_sdram_strobe;
-					sdram_address <= dac_sdram_address;
+					sdram_address <= dac_sdram_address(29 downto 0) & "00";
 					sdram_bitmask <= dac_sdram_bitmask;
 					
 					dac_sdram_ack <= sdram_ack;
@@ -491,7 +491,7 @@ begin
 					dbg_sdram_bus_state <= dac_sdram_cycle & eth_sdram_cycle & rpi_sdram_cycle & sdram_stall & sdram_strobe & sdram_ack & "00" & X"03";
 					
 					sdram_strobe <= eth_sdram_strobe;
-					sdram_address <= eth_sdram_address;
+					sdram_address <= eth_sdram_address(29 downto 0) & "00";
 					sdram_bitmask <= eth_sdram_bitmask;
 					sdram_writedata <= eth_sdram_writedata;
 					
@@ -599,7 +599,7 @@ register0 : wishbone_register
 		  reg_in(19) => dbg_sram_read_addr,
 		  reg_in(20) => dbg_sram_write_addr,
 		  reg_in(21) => dbg_eth_next_sequence,
-		  reg_in(22) => dbg_eth_audio_cmd,
+		  reg_in(22) => X"0000", -- Unused
 		  reg_in(23) => dbg_ip_ident,
 		  reg_in(24) => dbg_ip_frag_offset,
 		  reg_in(25) => dbg_spi_readdata,
@@ -650,6 +650,9 @@ sdram_controller : sdram
 
 
 ethernet_controller : entity work.ethernet
+   generic map(
+	   SDRAM_BUFFER_SIZE => SDRAM_BUFFER_SIZE
+	)
 	port map(
 		sys_clk => sys_clk,
 		sys_reset => sys_reset,
@@ -694,7 +697,6 @@ ethernet_controller : entity work.ethernet
 		dbg_rx_next_rxtail => dbg_eth_rx_next_rxtail,
 		dbg_pkt_len => dbg_eth_pkt_len,
 		dbg_next_sequence => dbg_eth_next_sequence,
-		dbg_audio_cmd => dbg_eth_audio_cmd,
 		dbg_spi_state => dbg_spi_state,
 		dbg_ip_ident => dbg_ip_ident,
 		dbg_ip_frag_offset => dbg_ip_frag_offset,
@@ -708,6 +710,9 @@ ethernet_controller : entity work.ethernet
 
 
 dac_controller : entity work.dac_controller
+   generic map(
+	   SDRAM_BUFFER_SIZE => SDRAM_BUFFER_SIZE
+	)
 	port map(
 		sys_clk => sys_clk,
 		sys_reset => cmd_reset_dac,

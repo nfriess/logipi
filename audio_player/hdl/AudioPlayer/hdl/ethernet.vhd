@@ -1,7 +1,7 @@
 ----------------------------------------------------------------------------------
 --
 -- State machine to drive ethernet chip.  Implements necessary parts of ethernet
--- protocol, TCP/IP, and DHCP.  Implements a custom autio protocol to communicate
+-- protocol, TCP/IP, and DHCP.  Implements a custom audio protocol to communicate
 -- with a PC on the local network, storing the received audio data in SDRAM.
 --
 ----------------------------------------------------------------------------------
@@ -11,6 +11,7 @@ use IEEE.STD_LOGIC_UNSIGNED.ALL;
 use IEEE.NUMERIC_STD.ALL;
 
 entity ethernet is
+    Generic ( SDRAM_BUFFER_SIZE : STD_LOGIC_VECTOR(23 downto 0) );
     Port (	sys_clk : in  STD_LOGIC;
 				sys_reset : in  STD_LOGIC;
 				
@@ -62,7 +63,6 @@ entity ethernet is
 				dbg_rx_next_rxtail : out STD_LOGIC_VECTOR(15 downto 0);
 				dbg_pkt_len : out STD_LOGIC_VECTOR(15 downto 0);
 				dbg_next_sequence : out STD_LOGIC_VECTOR(15 downto 0);
-				dbg_audio_cmd : out STD_LOGIC_VECTOR(15 downto 0);
 				dbg_spi_state : out STD_LOGIC_VECTOR(15 downto 0);
 				dbg_ip_ident : out STD_LOGIC_VECTOR(15 downto 0);
 				dbg_ip_frag_offset : out STD_LOGIC_VECTOR(15 downto 0);
@@ -175,13 +175,9 @@ architecture Behavioral of ethernet is
 	
 	-- Transmit buffer is 0 to this number, receive is this to 5FFF
 	constant RX_BUFFER_ADDR : std_logic_vector(15 downto 0) := X"0800"; -- 2K tx, 22K rx
-
-	-- 8MB (multiply value below by 4 because 32-bit aligned)
-	constant SDRAM_BUFFER_SIZE : std_logic_vector(23 downto 0) := X"100000";
 	
 	type ETHERNET_STATES is (
 		
-		-- State 0:
 		INIT_WR_EUDAST, INIT_RD_EUDAST, INIT_CMP_EUDAST, INIT_READ_CLKRDY,
 		INIT_POLL_CLKRDY, INIT_DO_RESET, INIT_RESET_WAIT, INIT_CONFIRM_RESET,
 		INIT_CMP_EUDAST_AGAIN, INIT_SET_ERXST, INIT_SET_TXMAC, INIT_GET_MACADDR_1,
@@ -258,25 +254,16 @@ architecture Behavioral of ethernet is
 		DHCP_REQUEST_DHCP_OPT_3, DHCP_REQUEST_DHCP_OPT_4,
 		DHCP_REQUEST_SET_TXST, DHCP_REQUEST_SET_TXLEN, DHCP_REQUEST_DO_TXRTS
 		
-		--DBG_DUMP_PACKET_1, DBG_DUMP_PACKET_2, DBG_DUMP_PACKET_3,
-		--DBG_DUMP_PACKET_4, DBG_DUMP_PACKET_5, DBG_DUMP_PACKET_6,
-		--DBG_DUMP_PACKET_7, DBG_DUMP_PACKET_8, DBG_DUMP_PACKET_9,
-		--DBG_DUMP_PACKET_10, DBG_DUMP_PACKET_11, DBG_DUMP_PACKET_12,
-		--DBG_DUMP_PACKET_13,
-		
-		--DBG_FLAG_1, DBG_FLAG_2, DBG_FLAG_3,
-		
-		--DBG_DUMP_PACKET_WAIT
-		
 		);
 	
 	signal state : ETHERNET_STATES := INIT_WR_EUDAST;
-	-- The next state to go to after an SPI operation
+	
+	-- The next state to go to after an SPI operation is complete
 	signal next_state : ETHERNET_STATES := IDLE;
 	
 	signal eth_int_o : std_logic;
 	
-	-- Signals to SPI master
+	-- Signals to spimaster device
 	signal spi_cycle : STD_LOGIC;
 	signal spi_strobe : STD_LOGIC;
 	signal spi_writedata : STD_LOGIC_VECTOR(31 downto 0);
@@ -334,6 +321,7 @@ architecture Behavioral of ethernet is
 	-- Ethernet packet length, including src_mac, dest_mac, ethertype, padding, and crc
 	signal pkt_len : std_logic_vector(15 downto 0);
 	
+	-- The IP address of this device, obtained by DHCP or by choosing a link-local address
 	signal local_ipaddr : std_logic_vector(31 downto 0);
 	
 	-- IP header length
@@ -376,7 +364,7 @@ architecture Behavioral of ethernet is
 	signal audio_next_sequence : std_logic_vector(31 downto 0);
 	signal audio_tmp_sequence : std_logic_vector(31 downto 0);
 	
-	
+	-- Data saved from volume control packet
 	signal volume_left_woofer : std_logic_vector(8 downto 0);
 	signal volume_left_lowmid : std_logic_vector(8 downto 0);
 	signal volume_left_uppermid : std_logic_vector(8 downto 0);
@@ -423,24 +411,26 @@ architecture Behavioral of ethernet is
 	signal sdram_strobe_s : std_logic;
 	signal sdram_write_complete : std_logic;
 	
+	-- When SPI command finishes before an SDRAM write, this will be set to '1'
+	-- so that we know that we need to send another read command over SPI before
+	-- reading more from its buffer.  Ideally SDRAM will be fast enough that
+	-- a write will complete while the next data is still being transferred over
+	-- SPI.
 	signal eth_needs_restart : std_logic;
 	
+	-- Tracking how much data is left to read from an audio packet
 	signal len_remaining : std_logic_vector(15 downto 0);
 	
 	-- Holds audio sample data for samples that cross packet boundary
 	signal inter_packet_data_reg : std_logic_vector(15 downto 0);
 	signal inter_packet_data_len : std_logic_vector(1 downto 0);
 	
+	-- A counter that runs at 10Hz
 	signal ten_hz_int_i : std_logic;
 	signal ten_hz_int_o : std_logic;
 	signal ten_hz_int_rst : std_logic;
 	
-	signal dbg_skip_fragment : std_logic_vector(7 downto 0);
-	signal dbg_skip_sequence : std_logic_vector(7 downto 0);
-	
-	--signal dbg_ip_hdr_data : std_logic_vector(255 downto 0);
-	
-	
+
 	-- Next sample received is the beginning of a frame
 	signal start_of_frame : std_logic;
 	
@@ -453,8 +443,8 @@ begin
 	cmd_mute <= audio_cmd(0);
 	cmd_pause <= audio_cmd(2);
 	
-	sdram_address <= "000000" & sdram_write_ptr & "00";
-	sdram_complete_address <= "000000" & sdram_complete_ptr & "00";
+	sdram_address <= "00000000" & sdram_write_ptr;
+	sdram_complete_address <= "00000000" & sdram_complete_ptr;
 	sdram_bitmask <= "1111";
 	sdram_writedata <= sdram_writedata_reg;
 	
@@ -476,7 +466,6 @@ begin
 	dbg_rx_next_rxtail <= rx_next_rxtail;
 	dbg_pkt_len <= pkt_len;
 	dbg_next_sequence <= audio_next_sequence(15 downto 0);
-	dbg_audio_cmd <= dbg_skip_fragment & dbg_skip_sequence;
 	
 	dbg_ip_ident <= ip_ident;
 	dbg_ip_frag_offset <= ip_frag_offset & "000";
@@ -538,20 +527,18 @@ begin
 		len_remaining <= (others => '0');
 		inter_packet_data_reg <= (others => '0');
 		inter_packet_data_len <= (others => '0');
-		dbg_skip_fragment <= (others => '0');
-		dbg_skip_sequence <= (others => '0');
-		--dbg_ip_hdr_data <= (others => '0');
 		start_of_frame <= '1';
 		cmd_user_sig <= '0';
 		clk16Mwarning_rst <= '0';
-		volume_left_woofer <= (others => '1');
-		volume_left_lowmid <= (others => '1');
-		volume_left_uppermid <= (others => '1');
-		volume_left_tweeter <= (others => '1');
-		volume_right_woofer <= (others => '1');
-		volume_right_lowmid <= (others => '1');
-		volume_right_uppermid <= (others => '1');
-		volume_right_tweeter <= (others => '1');
+		-- Volume defaults to -12db
+		volume_left_woofer <= "0" & X"40";
+		volume_left_lowmid <= "0" & X"40";
+		volume_left_uppermid <= "0" & X"40";
+		volume_left_tweeter <= "0" & X"40";
+		volume_right_woofer <= "0" & X"40";
+		volume_right_lowmid <= "0" & X"40";
+		volume_right_uppermid <= "0" & X"40";
+		volume_right_tweeter <= "0" & X"40";
 	elsif rising_edge(sys_clk) then
 	
 		ten_hz_int_rst <= '0';
@@ -588,7 +575,6 @@ begin
 			when INIT_CMP_EUDAST =>
 
 				dbg_state <= X"0003";
-				--dbg_state <= spi_readdata(15 downto 0);
 				
 				if spi_readdata(15 downto 0) = X"3412" then
 					counter <= (others => '0');
@@ -779,13 +765,9 @@ begin
 				
 			when IDLE =>
 			
-				--dbg_state(15) <= '1';
-			
 				state <= IDLE;
 				
 				if eth_int_o = '0' then
-				
-					--dbg_state(15) <= '0';
 					
 					state <= INT_DISABLE_INTERRUPTS;
 					
@@ -906,7 +888,6 @@ begin
 				
 				-- Register is little endian
 				if spi_readdata(3) = '1' then
-					--ten_hz_int_rst <= '1';
 					state <= LINK_RD_LINK_STAT;
 				elsif spi_readdata(14) = '1' then
 					state <= RX_SET_READ_PTR;
@@ -916,8 +897,6 @@ begin
 				
 			when INT_ENABLE_INTERRUPTS =>
 				-- Enable interrupts now that handling is complete
-				
-				--dbg_state(12) <= '1';
 				
 				spi_writedata <= CMD_SETEIE & X"00" & X"00" & X"00";
 				spi_datacount <= "001";
@@ -1029,7 +1008,7 @@ begin
 			when LINK_CLEAR_INTERRUPT =>
 				-- Clear interrupt flag
 				
-				--dbg_state <= X"0A06";
+				dbg_state <= X"0A06";
 				
 				spi_writedata <= CMD_BIT_CLR_UNBANKED & REG_EIRH & X"08" & X"00";
 				spi_datacount <= "011";
@@ -1679,10 +1658,10 @@ begin
 				dbg_state <= X"0208";
 				
 				if (ip_checksum(31 downto 16) + ip_checksum(15 downto 0)) /= X"FFFF" then
+					
 					spi_cycle <= '0'; -- Since auto_disable was 0 in prev state
-					--state <= RX_SET_ERXTAIL;
-					dbg_state <= (ip_checksum(31 downto 16) + ip_checksum(15 downto 0));
-					state <= ERROR;
+					state <= RX_SET_ERXTAIL;
+					
 				elsif ip_proto = IPPROTO_UDP then
 					
 					if ip_frag_offset = "0000000000000" then
@@ -1704,14 +1683,17 @@ begin
 						state <= RX_UDP_RESUME_FRAGMENT;
 						
 					else
+						
 						spi_cycle <= '0'; -- Since auto_disable was 0 in prev state
 						state <= RX_SET_ERXTAIL;
-						--state <= DBG_FLAG_1;
+						
 					end if;
 					
 				else
+					
 					spi_cycle <= '0'; -- Since auto_disable was 0 in prev state
 					state <= RX_SET_ERXTAIL;
+					
 				end if;
 			
 			when RX_UDP_LEN_CHECKSUM =>
@@ -1767,8 +1749,6 @@ begin
 					
 					spi_writedata <= CMD_READ_ERXDATA & X"00" & X"00" & X"00";
 					spi_datacount <= "101";
-					--spi_writedata <= X"00" & X"00" & X"00" & X"00";
-					--spi_datacount <= "100";
 					spi_auto_disable <= '0';
 					
 					next_state <= RX_AUDIO_HDR_1;
@@ -1797,7 +1777,7 @@ begin
 				
 				dbg_state <= X"0304";
 				
-				-- TODO: Reset entire system?
+				-- TODO: Add a reset entire system command?
 				
 				-- data(31) => '1' means no audio samples
 				-- data(8) => '1' means reset dac controller (sdram buffer is ignored)
@@ -1880,8 +1860,6 @@ begin
 					
 				else
 					
-					dbg_skip_sequence <= dbg_skip_sequence + 1;
-					
 					ip_next_frag_offset <= (others => '0'); -- Force next fragment to be 0
 					spi_cycle <= '0'; -- Since auto_disable was 0 in prev state
 					state <= RX_SET_ERXTAIL;
@@ -1898,16 +1876,10 @@ begin
 				if len_remaining = X"0001" or len_remaining = X"0002" then
 					
 					-- len is less than a full 3-byte audio sample
-					-- Special case to save in a register and quit no
+					-- Special case to save in a register and quit now
 					
 					-- audio_tmp_sequence is not updated as it will be done later
 
-					-- Last fragment is done, so all data is available for audio
-					--if ip_more_fragments = '0' then
-					--      sdram_complete_ptr <= sdram_write_ptr;
-					--      audio_next_sequence <= audio_tmp_sequence;
-					--end if;
-					
 					-- NOTE: Since we tried to read 3 bytes, the last 1 or 2 bytes will
 					-- be garbage
 					
@@ -2076,7 +2048,6 @@ begin
 				elsif inter_packet_data_len = "10" then
 
 					-- Only read what we need to finish this off
-					--spi_datacount <= std_logic_vector(to_unsigned(3 - to_integer(unsigned(inter_packet_data_len)), spi_datacount'length));
 					spi_datacount <= "001";
 					next_state <= RX_UDP_RESUME_FRAGMENT_FROM_REG;
 
@@ -2152,7 +2123,7 @@ begin
 				-- First two 9-bit channel volume controls
 				
 				volume_left_woofer <= spi_readdata(24 downto 16);
-				volume_left_lowmid <= spi_readdata(8 downto 0);
+				volume_right_woofer <= spi_readdata(8 downto 0);
 				
 				spi_writedata <= X"00" & X"00" & X"00" & X"00";
 				spi_datacount <= "100";
@@ -2164,8 +2135,8 @@ begin
 			when RX_VOLUME_2 =>
 				-- Next two 9-bit channel volume controls
 				
-				volume_left_uppermid <= spi_readdata(24 downto 16);
-				volume_left_tweeter <= spi_readdata(8 downto 0);
+				volume_left_lowmid <= spi_readdata(24 downto 16);
+				volume_right_lowmid <= spi_readdata(8 downto 0);
 				
 				spi_writedata <= X"00" & X"00" & X"00" & X"00";
 				spi_datacount <= "100";
@@ -2177,8 +2148,8 @@ begin
 			when RX_VOLUME_3 =>
 				-- Next two 9-bit channel volume controls
 				
-				volume_right_woofer <= spi_readdata(24 downto 16);
-				volume_right_lowmid <= spi_readdata(8 downto 0);
+				volume_left_uppermid <= spi_readdata(24 downto 16);
+				volume_right_uppermid <= spi_readdata(8 downto 0);
 				
 				spi_writedata <= X"00" & X"00" & X"00" & X"00";
 				spi_datacount <= "100";
@@ -2190,7 +2161,7 @@ begin
 			when RX_VOLUME_4 =>
 				-- Last two 9-bit channel volume controls
 				
-				volume_right_uppermid <= spi_readdata(24 downto 16);
+				volume_left_tweeter <= spi_readdata(24 downto 16);
 				volume_right_tweeter <= spi_readdata(8 downto 0);
 				
 				state <= RX_SET_ERXTAIL;				
@@ -2520,9 +2491,9 @@ begin
 				-- Done with data
 				if dhcp_opt_len < 5 then
 					
-					-- TODO: Check UDP data len before reading more
-					
 					-- Read 2 bytes for option type and length
+					
+					-- TODO: Check UDP data len before reading more
 					
 					-- TODO: This doesn't handle END and PADDING properly,
 					-- which both have no length indicator
@@ -2785,8 +2756,6 @@ begin
 			when TX_STATUS_SEQUENCE =>
 				-- Write 4 bytes of current sequence number
 				
-				--dbg_state <= X"0410";
-				
 				spi_writedata <= audio_next_sequence;
 				spi_datacount <= "100";
 				spi_auto_disable <= '0';
@@ -2797,8 +2766,6 @@ begin
 			when TX_STATUS_WINDOW =>
 				-- Write 4 bytes of window size
 				
-				--dbg_state <= X"0420";
-				
 				spi_writedata <= "000000" & sdram_size_avail & "00";
 				spi_datacount <= "100";
 				spi_auto_disable <= '0';
@@ -2808,8 +2775,6 @@ begin
 				
 			when TX_STATUS_STATUS =>
 				-- Write 4 bytes of status bitmask
-				
-				--dbg_state <= X"0420";
 				
 				clk16Mwarning_rst <= '1';
 				
@@ -2823,8 +2788,6 @@ begin
 			when TX_STATUS_SET_TXST =>
 				-- Set TXST to start address of packet
 				
-				--dbg_state <= X"0440";
-				
 				spi_writedata <= CMD_WRITE_REG_UNBANKED & REG_ETXSTL & UDP_STATUS_ADDR(7 downto 0) & UDP_STATUS_ADDR(15 downto 8);
 				spi_datacount <= "100";
 				spi_auto_disable <= '1';
@@ -2834,8 +2797,6 @@ begin
 				
 			when TX_STATUS_SET_TXLEN =>
 				-- Set TXLEN to length of packet
-				
-				--dbg_state <= X"0450";
 				
 				-- IP/UDP header is 28 bytes, 12 bytes data, plus 2 ethertype, plus 6 dest MAC addr
 				spi_writedata <= CMD_WRITE_REG_UNBANKED & REG_ETXLENL & X"34" & X"00";
@@ -2847,8 +2808,6 @@ begin
 				
 			when TX_STATUS_DO_TXRTS =>
 				-- Set TXRTS bit to start transmitting
-				
-				--dbg_state <= X"0460";
 				
 				spi_writedata <= CMD_SETTXRTS & X"00" & X"00" & X"00";
 				spi_datacount <= "001";
@@ -3638,11 +3597,7 @@ begin
 				
 			when STARTSPI =>
 				
-				--dbg_state(13) <= '0';
-				--dbg_state(12) <= '0';
-				
 				if spi_ack = '0' then
-					--dbg_state(14) <= '0';
 			
 					spi_cycle <= '1';
 					spi_strobe <= '1';
@@ -3660,17 +3615,11 @@ begin
 				
 			when WAITACK =>
 				
-				--if spi_ack = '1' then
-				--	dbg_state(14) <= '0';
-				--end if;
-				
 				if spi_ack = '1' and spi_auto_disable = '1' then
-					--dbg_state(12) <= '0';
 					spi_cycle <= '0';
 					spi_strobe <= '0';
 					state <= next_state;
 				elsif spi_ack = '1' and spi_auto_disable = '0' then
-					--dbg_state(12) <= '0';
 					spi_strobe <= '0';
 					state <= next_state;
 				end if;

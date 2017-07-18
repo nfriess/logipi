@@ -17,7 +17,9 @@ use IEEE.STD_LOGIC_UNSIGNED.ALL;
 use IEEE.NUMERIC_STD.ALL;
 
 entity dac_controller is
-    generic (SRAM_ADDR_SIZE : positive := 14);
+    Generic ( SRAM_ADDR_SIZE : positive := 14;
+	           SDRAM_BUFFER_SIZE : STD_LOGIC_VECTOR(23 downto 0)
+	 );
     Port ( sys_clk : in  STD_LOGIC;
            sys_reset : in  STD_LOGIC;
 			  
@@ -67,10 +69,6 @@ entity dac_controller is
 end dac_controller;
 
 architecture Behavioral of dac_controller is
-
-	-- 2MB (multiply value by 4 because 32-bit aligned)
-	constant SDRAM_BUFFER_SIZE : std_logic_vector(23 downto 0) := X"100000";
-	
 
 	signal sram_read_reset_i : std_logic;
 	signal sram_read_reset_o : std_logic;
@@ -604,7 +602,7 @@ begin
 	
 	
 	
-	sdram_address <= "000000" & sdram_read_ptr & "00";
+	sdram_address <= "00000000" & sdram_read_ptr;
 	sdram_bitmask <= "1111";
 	
 	
