@@ -404,11 +404,11 @@ begin
 				
 				
 				-- Generate SRAM read signal and increment read address
-				-- 383 - 5 * 8 - 2 = 
+				-- 383 - 6 * 8 - 2 = 
 				if cmd_pause_16m = '0' and sram_buffer_empty_16m = '0' and
-					(clk16M_count = 341 or clk16M_count = 346 or clk16M_count = 351 or
-					 clk16M_count = 356 or clk16M_count = 361 or clk16M_count = 366 or
-					 clk16M_count = 371 or clk16M_count = 376) then
+					(clk16M_count = 333 or clk16M_count = 339 or clk16M_count = 345 or
+					 clk16M_count = 351 or clk16M_count = 357 or clk16M_count = 363 or
+					 clk16M_count = 369 or clk16M_count = 375) then
 					
 					-- Get next data from sram
 					sram_read_addr <= sram_read_addr + 1;
@@ -425,9 +425,9 @@ begin
 				
 				-- Capture output of SRAM
 				if cmd_pause_16m = '0' and sram_buffer_empty_16m = '0' and
-					(clk16M_count = 342 or clk16M_count = 347 or clk16M_count = 352 or
-					 clk16M_count = 357 or clk16M_count = 362 or clk16M_count = 367 or
-					 clk16M_count = 372 or clk16M_count = 377) then
+					(clk16M_count = 334 or clk16M_count = 340 or clk16M_count = 346 or
+					 clk16M_count = 352 or clk16M_count = 358 or clk16M_count = 364 or
+					 clk16M_count = 370 or clk16M_count = 376) then
 					
 					if next_dac_load_reg = LEFT_WOOFER or sram_data_out(31) = '1' then
 					
@@ -450,7 +450,7 @@ begin
 						-- have no effect because count will be set to 343 as well.
 						-- If the state machine below and this one get out of sync, then
 						-- this line will force this state machine to get back in sync.
-						clk16M_count <= std_logic_vector(to_unsigned(343, clk16M_count'length));
+						clk16M_count <= std_logic_vector(to_unsigned(335, clk16M_count'length));
 					
 					elsif next_dac_load_reg = RIGHT_WOOFER then
 						
@@ -552,19 +552,19 @@ begin
 				-- then 5 cycles later is 347, when we have the result
 				if cmd_pause_16m = '0' and sram_buffer_empty_16m = '0' and multiplier_volume /= X"00" then
 					
-					if clk16M_count = 347 then
+					if clk16M_count = 340 then
 						left_woofer_load_reg <= multiplier_result(23 downto 4);
-					elsif clk16M_count = 352 then
+					elsif clk16M_count = 346 then
 						right_woofer_load_reg <= multiplier_result(23 downto 4);
-					elsif clk16M_count = 357 then
+					elsif clk16M_count = 352 then
 						left_lowmid_load_reg <= multiplier_result(23 downto 4);
-					elsif clk16M_count = 362 then
+					elsif clk16M_count = 358 then
 						right_lowmid_load_reg <= multiplier_result(23 downto 4);
-					elsif clk16M_count = 367 then
+					elsif clk16M_count = 364 then
 						left_uppermid_load_reg <= multiplier_result(23 downto 4);
-					elsif clk16M_count = 372 then
+					elsif clk16M_count = 370 then
 						right_uppermid_load_reg <= multiplier_result(23 downto 4);
-					elsif clk16M_count = 377 then
+					elsif clk16M_count = 376 then
 						left_tweeter_load_reg <= multiplier_result(23 downto 4);
 					elsif clk16M_count = 382 then
 						right_tweeter_load_reg <= multiplier_result(23 downto 4);
