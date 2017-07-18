@@ -206,7 +206,7 @@
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
     </transform>
-    <transform xil_pn:end_ts="1499823771" xil_pn:in_ck="-640899373950509242" xil_pn:name="TRANEXT_xstsynthesize_spartan6" xil_pn:prop_ck="-1881945641513117273" xil_pn:start_ts="1499823711">
+    <transform xil_pn:end_ts="1499825743" xil_pn:in_ck="-640899373950509242" xil_pn:name="TRANEXT_xstsynthesize_spartan6" xil_pn:prop_ck="-1881945641513117273" xil_pn:start_ts="1499825683">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="WarningsGenerated"/>
       <status xil_pn:value="ReadyToRun"/>
@@ -229,7 +229,7 @@
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
     </transform>
-    <transform xil_pn:end_ts="1499823778" xil_pn:in_ck="-3455917314263283343" xil_pn:name="TRANEXT_ngdbuild_FPGA" xil_pn:prop_ck="4349126425708674329" xil_pn:start_ts="1499823771">
+    <transform xil_pn:end_ts="1499825750" xil_pn:in_ck="-3455917314263283343" xil_pn:name="TRANEXT_ngdbuild_FPGA" xil_pn:prop_ck="4349126425708674329" xil_pn:start_ts="1499825743">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="WarningsGenerated"/>
       <status xil_pn:value="ReadyToRun"/>
@@ -239,10 +239,12 @@
       <outfile xil_pn:name="audio_player.ngd"/>
       <outfile xil_pn:name="audio_player_ngdbuild.xrpt"/>
     </transform>
-    <transform xil_pn:end_ts="1499823830" xil_pn:in_ck="-9170774707264407598" xil_pn:name="TRANEXT_map_spartan6" xil_pn:prop_ck="1448924893915930207" xil_pn:start_ts="1499823778">
+    <transform xil_pn:end_ts="1499825806" xil_pn:in_ck="-9170774707264407598" xil_pn:name="TRANEXT_map_spartan6" xil_pn:prop_ck="1448924893915930207" xil_pn:start_ts="1499825750">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="WarningsGenerated"/>
       <status xil_pn:value="ReadyToRun"/>
+      <status xil_pn:value="OutOfDateForOutputs"/>
+      <status xil_pn:value="OutputChanged"/>
       <outfile xil_pn:name="_xmsgs/map.xmsgs"/>
       <outfile xil_pn:name="audio_player.pcf"/>
       <outfile xil_pn:name="audio_player_map.map"/>
@@ -253,7 +255,7 @@
       <outfile xil_pn:name="audio_player_summary.xml"/>
       <outfile xil_pn:name="audio_player_usage.xml"/>
     </transform>
-    <transform xil_pn:end_ts="1499823881" xil_pn:in_ck="2794006680709462219" xil_pn:name="TRANEXT_par_spartan6" xil_pn:prop_ck="93661965788626211" xil_pn:start_ts="1499823830">
+    <transform xil_pn:end_ts="1499825889" xil_pn:in_ck="2794006680709462219" xil_pn:name="TRANEXT_par_spartan6" xil_pn:prop_ck="93661965788626211" xil_pn:start_ts="1499825806">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="WarningsGenerated"/>
       <status xil_pn:value="ReadyToRun"/>
@@ -268,7 +270,7 @@
       <outfile xil_pn:name="audio_player_pad.txt"/>
       <outfile xil_pn:name="audio_player_par.xrpt"/>
     </transform>
-    <transform xil_pn:end_ts="1499823901" xil_pn:in_ck="3665441404259222337" xil_pn:name="TRANEXT_bitFile_spartan6" xil_pn:prop_ck="5341574683187206424" xil_pn:start_ts="1499823881">
+    <transform xil_pn:end_ts="1499825908" xil_pn:in_ck="3665441404259222337" xil_pn:name="TRANEXT_bitFile_spartan6" xil_pn:prop_ck="5341574683187206424" xil_pn:start_ts="1499825889">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
       <outfile xil_pn:name="_xmsgs/bitgen.xmsgs"/>
@@ -280,7 +282,7 @@
       <outfile xil_pn:name="webtalk.log"/>
       <outfile xil_pn:name="webtalk_pn.xml"/>
     </transform>
-    <transform xil_pn:end_ts="1499823881" xil_pn:in_ck="7320638220501929422" xil_pn:name="TRAN_postRouteTrce" xil_pn:prop_ck="445577401284416184" xil_pn:start_ts="1499823874">
+    <transform xil_pn:end_ts="1499825888" xil_pn:in_ck="7320638220501929422" xil_pn:name="TRAN_postRouteTrce" xil_pn:prop_ck="445577401284416184" xil_pn:start_ts="1499825881">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
       <outfile xil_pn:name="_xmsgs/trce.xmsgs"/>
