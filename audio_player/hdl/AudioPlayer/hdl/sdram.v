@@ -75,9 +75,7 @@ module sdram
     output [1:0]    sdram_dqm_o,
     output [12:0]   sdram_addr_o,
     output [1:0]    sdram_ba_o,
-    inout [15:0]    sdram_data_io,
-	 
-	 output [15:0]   dbg_state
+    inout [15:0]    sdram_data_io
 );
 
 //-----------------------------------------------------------------
@@ -163,8 +161,6 @@ reg  [STATE_W-1:0]     delay_state_q;
 wire [SDRAM_ROW_W-1:0]  addr_col_w  = {{(SDRAM_ROW_W-SDRAM_COL_W){1'b0}}, addr_i[SDRAM_COL_W:2], 1'b0};
 wire [SDRAM_ROW_W-1:0]  addr_row_w  = addr_i[SDRAM_ADDR_W:SDRAM_COL_W+2+1];
 wire [SDRAM_BANK_W-1:0] addr_bank_w = addr_i[SDRAM_COL_W+2:SDRAM_COL_W+2-1];
-
-assign dbg_state = {state_q, target_state_q, delay_r, 4'b0};
 
 //-----------------------------------------------------------------
 // SDRAM State Machine

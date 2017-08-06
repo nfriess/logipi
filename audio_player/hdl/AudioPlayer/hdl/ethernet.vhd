@@ -58,15 +58,9 @@ entity ethernet is
 				
 				
 				dbg_state : out STD_LOGIC_VECTOR(15 downto 0);
-				dbg_rx_current_packet : out STD_LOGIC_VECTOR(15 downto 0);
-				dbg_rx_next_packet : out STD_LOGIC_VECTOR(15 downto 0);
-				dbg_rx_next_rxtail : out STD_LOGIC_VECTOR(15 downto 0);
-				dbg_pkt_len : out STD_LOGIC_VECTOR(15 downto 0);
 				dbg_next_sequence : out STD_LOGIC_VECTOR(15 downto 0);
-				dbg_spi_state : out STD_LOGIC_VECTOR(15 downto 0);
 				dbg_ip_ident : out STD_LOGIC_VECTOR(15 downto 0);
 				dbg_ip_frag_offset : out STD_LOGIC_VECTOR(15 downto 0);
-				dbg_spi_readdata : out STD_LOGIC_VECTOR(15 downto 0);
 				
 				led_o : out STD_LOGIC;
 				
@@ -461,15 +455,10 @@ begin
 	volume_right_tweeter_o <= volume_right_tweeter;
 
 	
-	dbg_rx_current_packet <= rx_current_packet;
-	dbg_rx_next_packet <= rx_next_packet;
-	dbg_rx_next_rxtail <= rx_next_rxtail;
-	dbg_pkt_len <= pkt_len;
 	dbg_next_sequence <= audio_next_sequence(15 downto 0);
 	
 	dbg_ip_ident <= ip_ident;
 	dbg_ip_frag_offset <= ip_frag_offset & "000";
-	dbg_spi_readdata <= sdram_writedata_reg(23 downto 8);
 	
 process(sys_clk)
 begin
@@ -531,14 +520,14 @@ begin
 		cmd_user_sig <= '0';
 		clk16Mwarning_rst <= '0';
 		-- Volume defaults to -12db
-		volume_left_woofer <= "0" & X"40";
-		volume_left_lowmid <= "0" & X"40";
-		volume_left_uppermid <= "0" & X"40";
-		volume_left_tweeter <= "0" & X"40";
-		volume_right_woofer <= "0" & X"40";
-		volume_right_lowmid <= "0" & X"40";
-		volume_right_uppermid <= "0" & X"40";
-		volume_right_tweeter <= "0" & X"40";
+		volume_left_woofer <= "0" & X"00";
+		volume_left_lowmid <= "0" & X"00";
+		volume_left_uppermid <= "0" & X"00";
+		volume_left_tweeter <= "0" & X"00";
+		volume_right_woofer <= "0" & X"00";
+		volume_right_lowmid <= "0" & X"00";
+		volume_right_uppermid <= "0" & X"00";
+		volume_right_tweeter <= "0" & X"00";
 	elsif rising_edge(sys_clk) then
 	
 		ten_hz_int_rst <= '0';
@@ -3711,9 +3700,7 @@ end process;
 			spi_clk => spi_clk,
 			spi_mosi => spi_mosi,
 			spi_miso => spi_miso,
-			spi_cs => spi_cs,
-			
-			dbg_state => dbg_spi_state
+			spi_cs => spi_cs
 		);
 	
 end Behavioral;

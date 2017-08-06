@@ -13,6 +13,7 @@
          <ClosedNode>/logipi_wishbone - Behavioral D:|Users|Natman|Xilinx|AudioPlayer|hdl|audio_player.vhd/ethernet_controller - ethernet - Behavioral</ClosedNode>
          <ClosedNode>/logipi_wishbone - Behavioral D:|Users|Natman|Xilinx|AudioPlayer|hdl|audio_player.vhd/i2s_controller - i2smaster - Behavioral</ClosedNode>
          <ClosedNode>/logipi_wishbone - Behavioral D:|Users|Natman|Xilinx|AudioPlayer|hdl|audio_player.vhd/logi_primitive_pack</ClosedNode>
+         <ClosedNode>/simtop - Behavioral D:|Users|Natman|Documents|git|logipi|audio_player|hdl|AudioPlayer|hdl|simtop.vhd</ClosedNode>
       </ClosedNodes>
       <SelectedItems>
          <SelectedItem>ethernet_controller - ethernet - Behavioral (D:/Users/Natman/Documents/git/logipi/audio_player/hdl/AudioPlayer/hdl/ethernet.vhd)</SelectedItem>
@@ -126,20 +127,19 @@
    <ItemView engineview="BehavioralSim" guiview="Source" compilemode="AutoCompile" >
       <ClosedNodes>
          <ClosedNodesVersion>2</ClosedNodesVersion>
-         <ClosedNode>/audio_player - Behavioral D:|Users|Natman|Documents|git|logipi|audio_player|hdl|AudioPlayer|hdl|audio_player.vhd</ClosedNode>
-         <ClosedNode>/audio_player - Behavioral D:|Users|Natman|Documents|git|logipi|audio_player|hdl|AudioPlayer|hdl|audio_player.vhd/dac_controller - dac_controller - Behavioral</ClosedNode>
+         <ClosedNode>/audio_player - Behavioral D:|Users|Natman|Documents|git|logipi|audio_player|hdl|AudioPlayer|hdl|audio_player.vhd/dac_controller - dac_controller - Behavioral/multiplier - volumemultiplier - volumemultiplier_a</ClosedNode>
          <ClosedNode>/audio_player - Behavioral D:|Users|Natman|Documents|git|logipi|audio_player|hdl|AudioPlayer|hdl|audio_player.vhd/ethernet_controller - ethernet - Behavioral</ClosedNode>
          <ClosedNode>/control_pack D:|Users|Natman|Documents|git|logipi|audio_player|hdl|AudioPlayer|hdl|control_pack.vhd</ClosedNode>
          <ClosedNode>/logi_primitive_pack D:|Users|Natman|Documents|git|logipi|audio_player|hdl|AudioPlayer|hdl|logi_primitive_pack.vhd</ClosedNode>
       </ClosedNodes>
       <SelectedItems>
-         <SelectedItem>simtop - Behavioral (D:/Users/Natman/Documents/git/logipi/audio_player/hdl/AudioPlayer/hdl/simtop.vhd)</SelectedItem>
+         <SelectedItem>audio_player - Behavioral (D:/Users/Natman/Documents/git/logipi/audio_player/hdl/AudioPlayer/hdl/audio_player.vhd)</SelectedItem>
       </SelectedItems>
       <ScrollbarPosition orientation="vertical" >0</ScrollbarPosition>
       <ScrollbarPosition orientation="horizontal" >0</ScrollbarPosition>
       <ViewHeaderState orientation="horizontal" >000000ff0000000000000001000000010000000000000000000000000000000002020000000100000001000000640000039f000000020000000000000000000000000200000064ffffffff0000008100000003000000020000039f0000000100000003000000000000000100000003</ViewHeaderState>
       <UserChangedColumnWidths orientation="horizontal" >false</UserChangedColumnWidths>
-      <CurrentItem>simtop - Behavioral (D:/Users/Natman/Documents/git/logipi/audio_player/hdl/AudioPlayer/hdl/simtop.vhd)</CurrentItem>
+      <CurrentItem>audio_player - Behavioral (D:/Users/Natman/Documents/git/logipi/audio_player/hdl/AudioPlayer/hdl/audio_player.vhd)</CurrentItem>
    </ItemView>
    <ItemView engineview="BehavioralSim" sourcetype="" guiview="Process" >
       <ClosedNodes>

@@ -18,7 +18,13 @@ end syncsignal;
 
 architecture Behavioral of syncsignal is
 
+	attribute ASYNC_REG     : string;
+	attribute KEEP          : string;
+
 	signal sig_shift : STD_LOGIC_VECTOR(1 downto 0);
+	
+	attribute KEEP of sig_shift: signal is "TRUE";
+	attribute ASYNC_REG of sig_shift: signal is "TRUE";
 
 begin
 

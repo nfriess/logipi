@@ -25,9 +25,7 @@ entity spimaster is
 			  spi_clk : out STD_LOGIC;
 			  spi_miso : in STD_LOGIC;
 			  spi_mosi : out STD_LOGIC;
-			  spi_cs : out STD_LOGIC;
-			  
-			  dbg_state : out STD_LOGIC_VECTOR(15 downto 0)
+			  spi_cs : out STD_LOGIC
 			  
 			);
 end spimaster;
@@ -113,24 +111,18 @@ begin
 			stb_clear <= '0';
 			cyc_inv_clear <= '0';
 			
-			dbg_state <= X"0000";
-			
 		elsif rising_edge(sys_clk) then
 		
-			dbg_state(15 downto 12) <= cyc_i & stb_i & ack & "0";
-			
 			stb_clear <= '0';
 			cyc_inv_clear <= '0';
 		
 			case state is
 			when IDLE =>
 				
-				dbg_state(11 downto 0) <= X"001";
-				
 				cyc_inv_clear <= '1';
 				
 				if cyc_i = '1' and stb_rising_edge = '1' then
-				
+					
 					-- Clear rising edge register
 					stb_clear <= '1';
 					
@@ -152,8 +144,6 @@ begin
 				
 			-- Wait 50ns for CS setup time, at 100mhz this is 5 clocks
 			when WAIT_CS_SETUP =>
-			
-				dbg_state(11 downto 0) <= X"002";
 				
 				bit_count <= bit_count + 1;
 				
@@ -176,8 +166,6 @@ begin
 				
 			-- Shift bits in/out
 			when SHIFT =>
-			
-				dbg_state(11 downto 0) <= X"003";
 				
 				-- Falling edge of spi_clk
 				if clk_count = "00" and spi_clk_internal = '1' then
@@ -212,8 +200,6 @@ begin
 			-- else quit
 			when LASTRISING =>
 				
-				dbg_state(11 downto 0) <= X"004";
-				
 				if clk_count = "00" and spi_clk_internal = '0' then
 					
 					-- Signal ack now since we have all data sent and received
@@ -230,8 +216,6 @@ begin
 			-- input bit, but we can still do so up until 10ns before rising
 			-- edge of spi_clk
 			when LASTFALLING =>
-				
-				dbg_state(11 downto 0) <= X"005";
 				
 				if clk_count = "00" and spi_clk_internal = '1' then
 					
@@ -288,8 +272,6 @@ begin
 			-- The WB master hasn't indicated what to do next
 			-- so we stretch out the spi_clk until we know
 			when DONE =>
-			
-				dbg_state(11 downto 0) <= X"006";
 				
 				bit_count <= bit_count + 1;
 				
@@ -358,8 +340,6 @@ begin
 			
 			-- Wait min 50ns for CS hold time, at 100mhz this is 5 clocks
 			when WAIT_CS_HOLD =>
-			
-				dbg_state(11 downto 0) <= X"007";
 				
 				bit_count <= bit_count + 1;
 				
@@ -381,8 +361,6 @@ begin
 				
 			-- Wait min 20ns while CS is disabled between cycles, at 100mhz this is 2 clocks
 			when WAIT_CS_DISABLE =>
-			
-				dbg_state(11 downto 0) <= X"008";
 				
 				bit_count <= bit_count + 1;
 				
