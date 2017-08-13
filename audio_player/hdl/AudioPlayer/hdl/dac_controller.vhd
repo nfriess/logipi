@@ -51,6 +51,7 @@ entity dac_controller is
 			  
 			  cmd_mute : in STD_LOGIC;
 			  cmd_pause : in STD_LOGIC;
+			  cmd_reset_dac : in STD_LOGIC;
 			  
 			  volume_left_woofer_i : in STD_LOGIC_VECTOR(8 downto 0);
 			  volume_left_lowmid_i : in STD_LOGIC_VECTOR(8 downto 0);
@@ -169,6 +170,8 @@ architecture Behavioral of dac_controller is
 		IDLE, SDRAM_START_READ, SDRAM_HAVE_ACK,
 		SRAM_WRITE_DONE, SDRAM_NOT_EMPTY,
 		
+		WAIT_SYNC_INIT,
+		
 		ERROR
 	);
 	
@@ -189,20 +192,19 @@ architecture Behavioral of dac_controller is
 	signal sample_count_in_frame : integer range 0 to 7;
 	
 	
-	signal sram_buffer_empty_16m : std_logic;
+	signal sram_buffer_empty_16m : std_logic := '0';
 	signal sram_buffer_empty_100m : std_logic;
 	
 	signal cmd_pause_16m : std_logic;
+	--signal cmd_reset_dac_16m : std_logic;
 	
-	signal sys_reset_16m : std_logic;
-	
-	signal sys_clk_slow : std_logic;
-	signal clk16M_slow : std_logic;
+	signal sys_clk_slow : std_logic := '0';
+	signal clk16M_slow : std_logic := '0';
 
 begin
 	
 	-- Conditions for when we should output zeros to the DACs (and used for an LED)
-	need_mute <= '1' when cmd_mute = '1' or cmd_pause = '1' or sram_buffer_empty_16m = '1' or sys_reset = '1' else '0';
+	need_mute <= '1' when cmd_mute = '1' or cmd_pause = '1' or sram_buffer_empty_16m = '1' or cmd_reset_dac = '1' else '0';
 
 	mute_o <= need_mute;
 	
@@ -245,18 +247,18 @@ begin
 		end if;
 	end process;
 
-	syncsignal_sys_reset_16m : entity work.syncsignal
-	port map(
-		target_clk => clk16M,
-		sys_reset => '0',
-		sig_i => sys_reset,
-		sig_o => sys_reset_16m
-	);
+--	syncsignal_cmd_reset_dac_16m : entity work.syncsignal
+--	port map(
+--		target_clk => clk16M,
+--		sys_reset => sys_reset,
+--		sig_i => cmd_reset_dac,
+--		sig_o => cmd_reset_dac_16m
+--	);
 
 	syncsignal_cmd_pause_16m : entity work.syncsignal
 	port map(
 		target_clk => clk16M,
-		sys_reset => sys_reset_16m,
+		sys_reset => sys_reset,
 		sig_i => cmd_pause,
 		sig_o => cmd_pause_16m
 	);
@@ -264,7 +266,7 @@ begin
 	syncsignal_read_reset : entity work.syncsignal
 	port map(
 		target_clk => clk16M,
-		sys_reset => sys_reset_16m,
+		sys_reset => sys_reset,
 		sig_i => sram_read_reset_i,
 		sig_o => sram_read_reset_o
 	);
@@ -288,7 +290,7 @@ begin
 	syncsignal_need_mute : entity work.syncsignal
 	port map(
 		target_clk => clk16M,
-		sys_reset => '0',
+		sys_reset => sys_reset,
 		sig_i => need_mute,
 		sig_o => need_mute_16m
 	);
@@ -349,9 +351,9 @@ begin
 	
 	-- Multiply sample by volume
 	-- 383 - 6 * 8 - 1 = 334
-	process(clk16M, sys_reset_16m)
+	process(clk16M, sys_reset)
 	begin
-		if sys_reset_16m = '1' then
+		if sys_reset = '1' then
 			multiplier_sample <= (others => '0');
 			multiplier_volume <= (others => '0');
 			multiplier_ce <= '0';
@@ -425,10 +427,10 @@ begin
 	-- 2. Reads data from SRAM and loads in to shift registers at the right time
 	-- 3. Shifts data out of shift registers in synch with bitclk and lrclk
 	-- 
-	process(clk16M, sys_reset_16m)
+	process(clk16M, sys_reset)
 	begin
 
-		if sys_reset_16m = '1' then
+		if sys_reset = '1' then
 			clk16M_count <= (others => '0');
 			bitclk_i <= '0';
 			lrclk_i <= '0';
@@ -999,6 +1001,12 @@ begin
 					end if;
 					
 					
+					
+				when WAIT_SYNC_INIT =>
+					-- Extra state for below_min signal to be updated after a sync reset
+					
+					buffer_state <= INIT;
+					
 				when ERROR =>
 					
 					dbg_state <= X"FFFF";
@@ -1009,6 +1017,19 @@ begin
 	--				buffer_state <= INIT;
 
 			end case;
+			
+			-- Synchronous "reset" of sdram buffer pointers and controls
+			if cmd_reset_dac = '1' then
+				buffer_state <= WAIT_SYNC_INIT;
+				sdram_read_ptr <= SDRAM_BUFFER_SIZE - 1;
+				sram_write <= '0';
+				sram_write_addr <= (others => '0');
+				sram_read_reset_i <= '1';
+				sram_buff_need_more_rst <= '0';
+				sample_count_in_frame <= 0;
+				sdram_cycle <= '0';
+				sdram_strobe <= '0';
+			end if;
 			
 		end if;
 	end process;

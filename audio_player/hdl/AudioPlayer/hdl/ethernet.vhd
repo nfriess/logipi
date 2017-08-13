@@ -1804,6 +1804,8 @@ begin
 					audio_tmp_sequence <= spi_readdata;
 				end if;
 				
+				cmd_reset_dac <= '0';
+				
 				if audio_cmd(8) = '1' then
 					cmd_reset_dac <= '1';
 					sdram_write_ptr <= (others => '0');
@@ -3585,7 +3587,7 @@ begin
 				
 				
 			when STARTSPI =>
-				
+			
 				if spi_ack = '0' then
 			
 					spi_cycle <= '1';

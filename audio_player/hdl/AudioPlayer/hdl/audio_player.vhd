@@ -703,7 +703,7 @@ dac_controller : entity work.dac_controller
 	)
 	port map(
 		sys_clk => sys_clk,
-		sys_reset => cmd_reset_dac,
+		sys_reset => sys_reset,
 		
 		dac_clk_oe => dac_clk_oe,
 		clk16M => clk16Mselected,
@@ -733,6 +733,7 @@ dac_controller : entity work.dac_controller
 		
 		cmd_mute => cmd_mute,
 		cmd_pause => cmd_pause,
+		cmd_reset_dac => cmd_reset_dac,
 		
 		volume_left_woofer_i => volume_left_woofer,
 		volume_left_lowmid_i => volume_left_lowmid,

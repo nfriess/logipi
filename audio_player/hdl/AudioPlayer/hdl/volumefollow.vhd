@@ -1,33 +1,14 @@
 ----------------------------------------------------------------------------------
--- Company: 
--- Engineer: 
--- 
--- Create Date:    20:15:43 07/20/2017 
--- Design Name: 
--- Module Name:    volumefollow - Behavioral 
--- Project Name: 
--- Target Devices: 
--- Tool versions: 
--- Description: 
 --
--- Dependencies: 
---
--- Revision: 
--- Revision 0.01 - File Created
--- Additional Comments: 
+-- Circuit to gradually change volume up or down to the target volume sent by
+-- the PC.  This reduces any popping sounds when the sound goes to/from a muted
+-- state, as well as any sudden jumps in the volume control.
 --
 ----------------------------------------------------------------------------------
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 
--- Uncomment the following library declaration if using
--- arithmetic functions with Signed or Unsigned values
 use IEEE.NUMERIC_STD.ALL;
-
--- Uncomment the following library declaration if instantiating
--- any Xilinx primitives in this code.
---library UNISIM;
---use UNISIM.VComponents.all;
 
 entity volumefollow is
     Port ( volume_i : in  STD_LOGIC_VECTOR (8 downto 0);
@@ -40,7 +21,7 @@ architecture Behavioral of volumefollow is
 
 begin
 	
-	process(volume_i, targetvolume_i)
+	process(volume_i, targetvolume_i, mute_i)
 	begin
 			
 		if mute_i = '1' or targetvolume_i = "0" & X"00" then
@@ -54,7 +35,6 @@ begin
 		end if;
 			
 	end process;
-
 
 end Behavioral;
 
