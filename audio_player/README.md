@@ -66,6 +66,31 @@ Other key components required for this project are:
   purposes.
 
 
+## Digital Crossover Demo
+
+All of the main parts of this project are focused on the
+hardware side, using the Logi-Pi board to drive multiple
+DACs.  The "sw" directory provides a minimal example of a
+C# program that will transmit audio data to the Logi-Pi
+board.  In the final setup of the Hi-fi system, my friend
+is driving 6 (and later 8) amplifiers, each outputting only
+the ideal frequency range for a particular driver (speaker).
+So insteead of using physical parts to create a crossover
+for each driver, we do this in C# and send the individual
+channel data to the Logi-Pi board, which then drives 6 DACs
+independently.
+
+The DigitalCrossoverDemo directory provides an example of
+a digital crossover created in C#.  This program does not
+work with the Logi-Pi board directly.  Instead it can be
+used to listen to and and visual the results of using the
+digital crossover code.  It should be trivial to plug this
+demo code into the simple player in the sw directory.
+
+The code for crossover was created by Leonard Manzara and
+ported to C# by me.
+
+
 
 ## License
 
