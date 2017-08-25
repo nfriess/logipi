@@ -87,8 +87,14 @@ used to listen to and and visual the results of using the
 digital crossover code.  It should be trivial to plug this
 demo code into the simple player in the sw directory.
 
-The code for crossover was created by Leonard Manzara and
-ported to C# by me.
+The digital crossover is implemented as a chain of audio
+filters, following a similar producer-consumer format to
+C# Stream sub-classes.  Also included in this project are
+a number of other helpful audio filters, such as a volume
+control and de-emphasis filter.
+
+The code for crossover filters and de-emphasis filter was
+written by Leonard Manzara in C, and ported to C# by me.
 
 
 
