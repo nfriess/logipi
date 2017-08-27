@@ -40,7 +40,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 int main() {
 
-	int i2c_fd, i;
+	int i2c_fd, i, r;
 	unsigned char i2c_out[128], i2c_in[128];
 
 
@@ -56,6 +56,9 @@ int main() {
 		return -1 ;
 	}
 
+	srand(time());
+	r = rand();
+
 	printf("Writing data...\n");
 
 	for (i = 0; i < (1<<15); i++) {
@@ -64,8 +67,8 @@ int main() {
 		i2c_out[0] = (unsigned char) ((i >> 8) & 0xFF);
 		i2c_out[1] = (unsigned char) (i & 0xFF);
 		// Data
-		i2c_out[2] = (unsigned char)(((i >> 8) ^ 0xDE) & 0xFF);
-		i2c_out[3] = (unsigned char)((i ^ 0xAD) & 0xFF);
+		i2c_out[2] = (unsigned char)(((i >> 8) ^ (r >> 8)) & 0xFF);
+		i2c_out[3] = (unsigned char)((i ^ r) & 0xFF);
 
 		write(i2c_fd, i2c_out, 4);
 
@@ -86,8 +89,8 @@ int main() {
 
 		read(i2c_fd, i2c_in, 2);
 
-		if ((unsigned char)(((i >> 8) ^ 0xDE) & 0xFF) != i2c_in[0] ||
-		    (unsigned char)((i ^ 0xAD) & 0xFF) != i2c_in[1]) {
+		if ((unsigned char)(((i >> 8) ^ (r >> 8)) & 0xFF) != i2c_in[0] ||
+		    (unsigned char)((i ^ r) & 0xFF) != i2c_in[1]) {
 			printf("Mismatch at 0x%04x: 0x%04x vs 0x%02x%02x\n", i, i ^ 0xDEAD, i2c_in[0], i2c_in[1]);
 			break;
 		}
