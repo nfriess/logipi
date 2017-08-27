@@ -24,11 +24,11 @@ use IEEE.NUMERIC_STD.ALL;
 
 entity debounce is
 	 Generic (
-				  SteadyMinTime : Positive := 10
+				  SteadyMinTime : Positive := 10;
+				  SigDefault : STD_LOGIC := '0'
 	           );
     Port ( 
 			  sys_clk : in  STD_LOGIC;
-           sys_reset : in  STD_LOGIC;
 	 
 			  sig_in : in  STD_LOGIC;
            sig_out : out  STD_LOGIC
@@ -37,21 +37,18 @@ end debounce;
 
 architecture Behavioral of debounce is
 
-	signal last_sig : STD_LOGIC;
-	signal steady_count : STD_LOGIC_VECTOR(3 downto 0);
+	signal last_sig : STD_LOGIC := SigDefault;
+	signal sig_out_reg : STD_LOGIC := SigDefault;
+	signal steady_count : STD_LOGIC_VECTOR(3 downto 0) := (others => '0');
 
 begin
 
-	process(sys_clk, sys_reset, sig_in)
+	sig_out <= sig_out_reg;
+
+	process(sys_clk)
 	begin
 	
-		if sys_reset = '1' then
-			
-			last_sig <= sig_in;
-			sig_out <= sig_in;
-			steady_count <= (others => '0');
-			
-		elsif rising_edge(sys_clk) then
+		if rising_edge(sys_clk) then
 			
 			steady_count <= steady_count + 1;
 			
@@ -63,7 +60,7 @@ begin
 			else
 				
 				if steady_count = SteadyMinTime then
-					sig_out <= sig_in;
+					sig_out_reg <= sig_in;
 				end if;
 				
 			end if;

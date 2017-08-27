@@ -61,7 +61,6 @@ entity i2cslave is
 				  I2C_ADDRESS : Positive range 1 to 16#7F# := 16#60#
 	           );
     Port ( sys_clk : in  STD_LOGIC;
-           sys_reset : in  STD_LOGIC;
            i2c_sda : inout  STD_LOGIC;
            i2c_scl : inout  STD_LOGIC;
 			  
@@ -84,10 +83,14 @@ architecture Behavioral of i2cslave is
 	
 	constant I2C_DIR_READ : std_logic := '1';
 
-	signal i2c_sda_i, i2c_sda_raw_o, i2c_sda_stable_o, i2c_sda_oe : std_logic;
-	signal i2c_scl_i, i2c_scl_raw_o, i2c_scl_stable_o, i2c_scl_oe : std_logic;
+	signal i2c_sda_i : std_logic := '1';
+	signal i2c_scl_i : std_logic := '1';
+	signal i2c_sda_raw_o, i2c_sda_stable_o : std_logic;
+	signal i2c_scl_raw_o, i2c_scl_stable_o : std_logic;
+	signal i2c_sda_oe : std_logic := IO_INPUT;
+	signal i2c_scl_oe : std_logic := IO_INPUT;
 	
-	signal i2c_sda_last : std_logic;
+	signal i2c_sda_last : std_logic := '0';
 	
 	signal i2c_addr : std_logic_vector(7 downto 0);
 	
@@ -96,8 +99,8 @@ architecture Behavioral of i2cslave is
 	signal addr_bit_count : integer range 0 to ADDR_WIDTH;
 	signal data_bit_count : integer range 0 to DATA_WIDTH;
 	
-	signal addr_reg : std_logic_vector(ADDR_WIDTH-1 downto 0);
-	signal data_reg : std_logic_vector(DATA_WIDTH-1 downto 0);
+	signal addr_reg : std_logic_vector(ADDR_WIDTH-1 downto 0) := (others => '0');
+	signal data_reg : std_logic_vector(DATA_WIDTH-1 downto 0) := (others => '0');
 	
 	signal count : std_logic_vector(3 downto 0);
 
@@ -124,37 +127,15 @@ begin
 	wb_data_o <= data_reg;
 	
 
-	process(sys_clk,sys_reset)
+	process(sys_clk)
 	begin
 	
-		if sys_reset = '1' then
+		if rising_edge(sys_clk) then
 		
-			state <= IDLE;
-			
-			i2c_sda_oe <= IO_INPUT;
-			i2c_scl_oe <= IO_INPUT;
-			
-			i2c_sda_i <= '1';
-			i2c_scl_i <= '1';
-			i2c_sda_last <= '0';
-			
-			count <= (others => '0');
-			i2c_addr <= (others => '0');
-			
-			tmp_bit <= '0';
-			
-			addr_bit_count <= 0;
-			data_bit_count <= 0;
-			
-			addr_reg <= (others => '0');
-			data_reg <= (others => '0');
-			
 			wb_cycle <= '0';
 			wb_strobe <= '0';
 			wb_write <= '0';
 			
-		elsif rising_edge(sys_clk) then
-		
 			if i2c_sda_oe = IO_INPUT then
 				i2c_sda_last <= i2c_sda_stable_o;
 			end if;
@@ -337,6 +318,10 @@ begin
 			when WRITE_WB_CYCLE_WAIT =>
 				-- Wait for ack on wishbone bus
 				
+				wb_cycle <= '1';
+				wb_strobe <= '1';
+				wb_write <= '1';
+				
 				-- Early ACK signal
 				i2c_sda_oe <= IO_OUTPUT;
 				i2c_sda_i <= '0';
@@ -396,6 +381,10 @@ begin
 				
 			when READ_WB_CYCLE_WAIT =>
 				-- Wait for ack on wishbone bus
+				
+				wb_cycle <= '1';
+				wb_strobe <= '1';
+				wb_write <= '0';
 				
 				if wb_ack = '1' then
 					
@@ -631,17 +620,21 @@ begin
 	
 	
 	debounce_sda : entity work.debounce
+	generic map(
+		SigDefault => '1'
+	)
 	port map(
 		sys_clk => sys_clk,
-		sys_reset => sys_reset,
 		sig_in => i2c_sda_raw_o,
 		sig_out => i2c_sda_stable_o
 	);
 
 	debounce_scl : entity work.debounce
+	generic map(
+		SigDefault => '1'
+	)
 	port map(
 		sys_clk => sys_clk,
-		sys_reset => sys_reset,
 		sig_in => i2c_scl_raw_o,
 		sig_out => i2c_scl_stable_o
 	);

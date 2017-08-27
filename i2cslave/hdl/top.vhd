@@ -80,7 +80,6 @@ begin
 	)
 	port map(
 		sys_clk => OSC_FPGA,
-		sys_reset => rst,
 		i2c_sda => SYS_SDA,
 		i2c_scl => SYS_SCL,
 		
