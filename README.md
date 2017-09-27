@@ -15,11 +15,14 @@ http://valentfx.com/logi-pi/
 - **i2cslave**: An I2C slave device that can communicate with
   the Raspberry Pi, implementing a wishbone master in VHDL.
 
+- **spislave**: An SPI slave device that can communicate with
+  the Raspberry Pi, implementing a wishbone master in VHDL.
+
 ## License
 
 **Licensed under the GNU GENERAL PUBLIC LICENSE version 2**
 
-Copyright (C) 2016  Nathan Friess
+Copyright (C) 2016-2017  Nathan Friess
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
