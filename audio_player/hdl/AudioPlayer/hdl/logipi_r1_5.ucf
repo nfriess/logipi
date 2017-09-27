@@ -13,7 +13,7 @@ NET PMOD1<7> TNM_NET = clk16_grp;
 ##### Clock Period Constraints #####
 TIMESPEC TS_PER_CLK50 = PERIOD "clk50_grp" 20.0 ns ;
 #TIMESPEC TS_PER_CLK100 = PERIOD "clk100_grp" 10.0 ns;
-TIMESPEC TS_PER_CLK32 = PERIOD "clk32_grp" 20.0 ns;
+TIMESPEC TS_PER_CLK32 = PERIOD "clk32_grp" 32.0513 ns;
 #PIN "sys_clocks_gen/clkout2_buf.O" CLOCK_DEDICATED_ROUTE = FALSE;
 NET "SYS_SPI_SCK" CLOCK_DEDICATED_ROUTE = FALSE;
 

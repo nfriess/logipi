@@ -249,14 +249,14 @@ intreg_clk16M_warning : entity work.interrupt_reg
 	);
 
 
--- After 10 minutes of no data received, assert idle_sig
+-- After 10 minutes of no data received, assert ~idle_sig
 process (dac_lrclk_o, sys_reset)
 begin
 	if sys_reset = '1' then
 		idle_count <= (others => '0');
 	elsif (rising_edge(dac_lrclk_o)) then
 		
-		idle_sig <= '0';
+		idle_sig <= '1';
 		
 		if dac_mute = '1' then
 			idle_count <= idle_count + 1;
@@ -266,7 +266,7 @@ begin
 		
 		-- 44100 * 60 secs * 10 mins
 		if idle_count = X"193BF60" and dac_mute = '1' then
-			idle_sig <= '1';
+			idle_sig <= '0';
 			idle_count <= idle_count;
 		end if;
 		
@@ -699,7 +699,8 @@ ethernet_controller : entity work.ethernet
 
 dac_controller : entity work.dac_controller
    generic map(
-	   SDRAM_BUFFER_SIZE => SDRAM_BUFFER_SIZE
+	   SDRAM_BUFFER_SIZE => SDRAM_BUFFER_SIZE,
+		SRAM_ADDR_SIZE => 13
 	)
 	port map(
 		sys_clk => sys_clk,

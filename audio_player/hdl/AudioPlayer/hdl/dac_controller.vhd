@@ -210,7 +210,7 @@ begin
 	
 	--dbg_sram_read_addr <= "00" & sram_read_addr_100m;
 	dbg_sram_read_addr <= X"0000";
-	dbg_sram_write_addr <= "00" & sram_write_addr;
+	dbg_sram_write_addr <= (15 downto SRAM_ADDR_SIZE => '0') & sram_write_addr;
 	
 	-- Slower versions of clocks to help with signal synchronizer circuits
 	process (sys_clk)
