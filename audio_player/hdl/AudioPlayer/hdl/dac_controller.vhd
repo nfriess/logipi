@@ -757,8 +757,6 @@ begin
 					-- Need to fill entire buffer
 					dbg_state(11 downto 8) <= X"1";
 					
-					dbg_count <= dbg_count + 1;
-					
 					sram_write_addr <= (others => '0');
 					sram_read_reset_i <= '1';
 					
@@ -793,6 +791,7 @@ begin
 						sdram_cycle <= '0';
 						sdram_strobe <= '0';
 						buffer_state <= INIT;
+						dbg_count <= dbg_count + 1;
 					end if;
 					
 				when INIT_SRAM_WRITE =>
@@ -890,6 +889,7 @@ begin
 					if sram_buffer_empty_100m = '1' then
 						sram_read_reset_i <= '1';
 						buffer_state <= INIT;
+						dbg_count <= dbg_count + 1;
 					-- More data available in SDRAM and SRAM pointer wrapped around to next half
 					elsif sdram_buffer_empty = '0' and sram_buff_need_more_o = '1' then
 						sram_buff_need_more_rst <= '1';
@@ -920,6 +920,7 @@ begin
 						sdram_cycle <= '0';
 						sdram_strobe <= '0';
 						buffer_state <= INIT;
+						dbg_count <= dbg_count + 1;
 					end if;
 					
 				when SDRAM_HAVE_ACK =>
@@ -998,6 +999,7 @@ begin
 						sdram_cycle <= '0';
 						sdram_strobe <= '0';
 						buffer_state <= INIT;
+						dbg_count <= dbg_count + 1;
 					end if;
 					
 					
@@ -1006,6 +1008,7 @@ begin
 					-- Extra state for below_min signal to be updated after a sync reset
 					
 					buffer_state <= INIT;
+					dbg_count <= dbg_count + 1;
 					
 				when ERROR =>
 					

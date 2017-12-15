@@ -531,7 +531,6 @@ begin
 	elsif rising_edge(sys_clk) then
 	
 		ten_hz_int_rst <= '0';
-		cmd_reset_dac <= '0';
 		clk16Mwarning_rst <= '0';
 		
 		case state is
@@ -740,6 +739,8 @@ begin
 				spi_writedata <= CMD_BIT_SET_UNBANKED & REG_EIEL & X"40" & X"88";
 				spi_datacount <= "100";
 				spi_auto_disable <= '1';
+				
+				cmd_reset_dac <= '0';
 				
 				next_state <= IDLE;
 				state <= STARTSPI;

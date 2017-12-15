@@ -758,6 +758,7 @@ PMOD4(1) <= dac_bitclk_o;
 PMOD4(4) <= dac_mute;
 PMOD4(5) <= user_sig;
 PMOD4(6) <= idle_sig;
+PMOD4(7) <= not clk16Mwarning_o;
 
 PMOD3(0) <= dac_left_woofer_data;
 PMOD3(1) <= dac_right_woofer_data;
