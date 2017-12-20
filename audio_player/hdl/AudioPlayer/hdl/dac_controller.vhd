@@ -23,7 +23,7 @@ entity dac_controller is
     Port ( sys_clk : in  STD_LOGIC;
            sys_reset : in  STD_LOGIC;
 			  
-           clk16M : in  STD_LOGIC;
+           audioclk : in  STD_LOGIC;
            dac_clk_oe : in  STD_LOGIC;
 			  
 			  bitclk_o : out   STD_LOGIC;
@@ -53,6 +53,8 @@ entity dac_controller is
 			  cmd_pause : in STD_LOGIC;
 			  cmd_reset_dac : in STD_LOGIC;
 			  
+			  cmd_freq_select : in STD_LOGIC_VECTOR(1 downto 0);
+			  
 			  volume_left_woofer_i : in STD_LOGIC_VECTOR(8 downto 0);
 			  volume_left_lowmid_i : in STD_LOGIC_VECTOR(8 downto 0);
 			  volume_left_uppermid_i : in STD_LOGIC_VECTOR(8 downto 0);
@@ -71,73 +73,102 @@ end dac_controller;
 
 architecture Behavioral of dac_controller is
 
+	-- Full lrclk cycle and max number of states
+	constant MAXCOUNT_16M : positive := 383;
+	constant MAXCOUNT_28M_44 : positive := 639;
+	constant MAXCOUNT_28M_48 : positive := 587;
+
+	-- Half of the lrclk cycle (rising edge)
+	constant LRCLK_16M : positive := 192;
+	constant LRCLK_28M_44 : positive := 286;
+	constant LRCLK_28M_48 : positive := 288;
+	
+	-- How often bitclk needs to be flipped
+	constant BITCLK_16M : positive := 8;
+	constant BITCLK_28M_44 : positive := 14;
+	constant BITCLK_28M_48 : positive := 12;
+	
+	-- How many extra times MSB should be shifted in
+	constant MSBCOUNT_16M : positive := 4;
+	constant MSBCOUNT_28M_44 : positive := 3;
+	constant MSBCOUNT_28M_48 : positive := 4;
+
 	signal sram_read_reset_i : std_logic;
 	signal sram_read_reset_o : std_logic;
 	
 
-	signal clk16M_count : std_logic_vector(8 downto 0);
+	signal audioclk_count : std_logic_vector(11 downto 0) := X"000";
+	signal bitclk_count : std_logic_vector(5 downto 0) := "000000";
+	signal msb_count : std_logic_vector(2 downto 0) := "000";
 	
-	signal lrclk_i : std_logic;
-	signal bitclk_i : std_logic;
+	signal dac_clk_max : positive := MAXCOUNT_16M;
+	signal dac_clk_lrclk : positive := LRCLK_16M;
+	signal dac_clk_bitclk : positive := BITCLK_16M;
+	signal dac_clk_msb : positive := MSBCOUNT_16M;
+	
+	signal last_freq_select : std_logic_vector(1 downto 0) := "11";
+	
+	signal lrclk_i : std_logic := '0';
+	signal bitclk_i : std_logic := '0';
 	
 	
 
 	signal need_mute : std_logic;
 	signal need_mute_16m : std_logic;
 	
-	signal left_tweeter_last_sample : std_logic_vector(23 downto 0);
-	signal left_lowmid_last_sample : std_logic_vector(23 downto 0);
-	signal left_uppermid_last_sample : std_logic_vector(23 downto 0);
-	signal left_woofer_last_sample : std_logic_vector(23 downto 0);
-	signal right_tweeter_last_sample : std_logic_vector(23 downto 0);
-	signal right_lowmid_last_sample : std_logic_vector(23 downto 0);
-	signal right_uppermid_last_sample : std_logic_vector(23 downto 0);
-	signal right_woofer_last_sample : std_logic_vector(23downto 0);
+	signal left_tweeter_last_sample : std_logic_vector(23 downto 0) := X"000000";
+	signal left_lowmid_last_sample : std_logic_vector(23 downto 0) := X"000000";
+	signal left_uppermid_last_sample : std_logic_vector(23 downto 0) := X"000000";
+	signal left_woofer_last_sample : std_logic_vector(23 downto 0) := X"000000";
+	signal right_tweeter_last_sample : std_logic_vector(23 downto 0) := X"000000";
+	signal right_lowmid_last_sample : std_logic_vector(23 downto 0) := X"000000";
+	signal right_uppermid_last_sample : std_logic_vector(23 downto 0) := X"000000";
+	signal right_woofer_last_sample : std_logic_vector(23downto 0) := X"000000";
 	
-	signal left_tweeter_load_reg : std_logic_vector(19 downto 0);
-	signal left_lowmid_load_reg : std_logic_vector(19 downto 0);
-	signal left_uppermid_load_reg : std_logic_vector(19 downto 0);
-	signal left_woofer_load_reg : std_logic_vector(19 downto 0);
-	signal right_tweeter_load_reg : std_logic_vector(19 downto 0);
-	signal right_lowmid_load_reg : std_logic_vector(19 downto 0);
-	signal right_uppermid_load_reg : std_logic_vector(19 downto 0);
-	signal right_woofer_load_reg : std_logic_vector(19 downto 0);
+	signal left_tweeter_load_reg : std_logic_vector(19 downto 0) := X"00000";
+	signal left_lowmid_load_reg : std_logic_vector(19 downto 0) := X"00000";
+	signal left_uppermid_load_reg : std_logic_vector(19 downto 0) := X"00000";
+	signal left_woofer_load_reg : std_logic_vector(19 downto 0) := X"00000";
+	signal right_tweeter_load_reg : std_logic_vector(19 downto 0) := X"00000";
+	signal right_lowmid_load_reg : std_logic_vector(19 downto 0) := X"00000";
+	signal right_uppermid_load_reg : std_logic_vector(19 downto 0) := X"00000";
+	signal right_woofer_load_reg : std_logic_vector(19 downto 0) := X"00000";
 	
-	signal left_tweeter_shift_reg : std_logic_vector(19 downto 0);
-	signal left_lowmid_shift_reg : std_logic_vector(19 downto 0);
-	signal left_uppermid_shift_reg : std_logic_vector(19 downto 0);
-	signal left_woofer_shift_reg : std_logic_vector(19 downto 0);
-	signal right_tweeter_shift_reg : std_logic_vector(19 downto 0);
-	signal right_lowmid_shift_reg : std_logic_vector(19 downto 0);
-	signal right_uppermid_shift_reg : std_logic_vector(19 downto 0);
-	signal right_woofer_shift_reg : std_logic_vector(19 downto 0);
+	signal left_tweeter_shift_reg : std_logic_vector(19 downto 0) := X"00000";
+	signal left_lowmid_shift_reg : std_logic_vector(19 downto 0) := X"00000";
+	signal left_uppermid_shift_reg : std_logic_vector(19 downto 0) := X"00000";
+	signal left_woofer_shift_reg : std_logic_vector(19 downto 0) := X"00000";
+	signal right_tweeter_shift_reg : std_logic_vector(19 downto 0) := X"00000";
+	signal right_lowmid_shift_reg : std_logic_vector(19 downto 0) := X"00000";
+	signal right_uppermid_shift_reg : std_logic_vector(19 downto 0) := X"00000";
+	signal right_woofer_shift_reg : std_logic_vector(19 downto 0) := X"00000";
 	
-	signal volume_left_woofer_16m : std_logic_vector(8 downto 0);
-	signal volume_left_lowmid_16m : std_logic_vector(8 downto 0);
-	signal volume_left_uppermid_16m : std_logic_vector(8 downto 0);
-	signal volume_left_tweeter_16m : std_logic_vector(8 downto 0);
-	signal volume_right_woofer_16m : std_logic_vector(8 downto 0);
-	signal volume_right_lowmid_16m : std_logic_vector(8 downto 0);
-	signal volume_right_uppermid_16m : std_logic_vector(8 downto 0);
-	signal volume_right_tweeter_16m : std_logic_vector(8 downto 0);
+	signal volume_left_woofer_16m : std_logic_vector(8 downto 0) := "000000000";
+	signal volume_left_lowmid_16m : std_logic_vector(8 downto 0) := "000000000";
+	signal volume_left_uppermid_16m : std_logic_vector(8 downto 0) := "000000000";
+	signal volume_left_tweeter_16m : std_logic_vector(8 downto 0) := "000000000";
+	signal volume_right_woofer_16m : std_logic_vector(8 downto 0) := "000000000";
+	signal volume_right_lowmid_16m : std_logic_vector(8 downto 0) := "000000000";
+	signal volume_right_uppermid_16m : std_logic_vector(8 downto 0) := "000000000";
+	signal volume_right_tweeter_16m : std_logic_vector(8 downto 0) := "000000000";
 	
-	signal volume_left_woofer_current : std_logic_vector(8 downto 0);
-	signal volume_left_lowmid_current : std_logic_vector(8 downto 0);
-	signal volume_left_uppermid_current : std_logic_vector(8 downto 0);
-	signal volume_left_tweeter_current : std_logic_vector(8 downto 0);
-	signal volume_right_woofer_current : std_logic_vector(8 downto 0);
-	signal volume_right_lowmid_current : std_logic_vector(8 downto 0);
-	signal volume_right_uppermid_current : std_logic_vector(8 downto 0);
-	signal volume_right_tweeter_current : std_logic_vector(8 downto 0);
+	signal volume_left_woofer_current : std_logic_vector(8 downto 0) := "000000000";
+	signal volume_left_lowmid_current : std_logic_vector(8 downto 0) := "000000000";
+	signal volume_left_uppermid_current : std_logic_vector(8 downto 0) := "000000000";
+	signal volume_left_tweeter_current : std_logic_vector(8 downto 0) := "000000000";
+	signal volume_right_woofer_current : std_logic_vector(8 downto 0) := "000000000";
+	signal volume_right_lowmid_current : std_logic_vector(8 downto 0) := "000000000";
+	signal volume_right_uppermid_current : std_logic_vector(8 downto 0) := "000000000";
+	signal volume_right_tweeter_current : std_logic_vector(8 downto 0) := "000000000";
 	
-	signal multiplier_ce : std_logic;
-	signal multiplier_sample : std_logic_vector(23 downto 0);
-	signal multiplier_volume : std_logic_vector(8 downto 0);
+	signal multiplier_ce : std_logic := '0';
+	signal multiplier_sample : std_logic_vector(23 downto 0) := X"000000";
+	signal multiplier_volume : std_logic_vector(8 downto 0) := "000000000";
 	signal multiplier_output : std_logic_vector(23 downto 0);
 	signal multiplier_result : std_logic_vector(23 downto 0);
 	
-	signal volumecontrol_i : std_logic_vector(8 downto 0);
-	signal volumecontrol_target_i : std_logic_vector(8 downto 0);
+	signal volumecontrol_i : std_logic_vector(8 downto 0) := "000000000";
+	signal volumecontrol_target_i : std_logic_vector(8 downto 0) := "000000000";
 	signal volumecontrol_o : std_logic_vector(8 downto 0);
 	
 	signal sram_write_addr : std_logic_vector(SRAM_ADDR_SIZE-1 downto 0) := (others => '0');
@@ -199,7 +230,7 @@ architecture Behavioral of dac_controller is
 	--signal cmd_reset_dac_16m : std_logic;
 	
 	signal sys_clk_slow : std_logic := '0';
-	signal clk16M_slow : std_logic := '0';
+	signal audioclk_slow : std_logic := '0';
 
 begin
 	
@@ -220,10 +251,10 @@ begin
 		end if;
 	end process;
 	
-	process (clk16M)
+	process (audioclk)
 	begin
-		if rising_edge(clk16M) then
-			clk16M_slow <= not clk16M_slow;
+		if rising_edge(audioclk) then
+			audioclk_slow <= not audioclk_slow;
 		end if;
 	end process;
 	
@@ -234,22 +265,22 @@ begin
 	-- TODO: A bus version of this?
 	--syncsignal_sram_write_addr_16m : entity work.syncsignal
 	--port map(
-	--	target_clk => clk16M,
+	--	target_clk => audioclk,
 	--	sys_reset => sys_reset,
 	--	sig_i => sram_write_addr,
 	--	sig_o => sram_write_addr_16m
 	--);
 	
-	process (clk16M)
+	process (audioclk)
 	begin
-		if rising_edge(clk16M) then
+		if rising_edge(audioclk) then
 			sram_write_addr_16m <= sram_write_addr;
 		end if;
 	end process;
 
 --	syncsignal_cmd_reset_dac_16m : entity work.syncsignal
 --	port map(
---		target_clk => clk16M,
+--		target_clk => audioclk,
 --		sys_reset => sys_reset,
 --		sig_i => cmd_reset_dac,
 --		sig_o => cmd_reset_dac_16m
@@ -257,7 +288,7 @@ begin
 
 	syncsignal_cmd_pause_16m : entity work.syncsignal
 	port map(
-		target_clk => clk16M,
+		target_clk => audioclk,
 		sys_reset => sys_reset,
 		sig_i => cmd_pause,
 		sig_o => cmd_pause_16m
@@ -265,7 +296,7 @@ begin
 
 	syncsignal_read_reset : entity work.syncsignal
 	port map(
-		target_clk => clk16M,
+		target_clk => audioclk,
 		sys_reset => sys_reset,
 		sig_i => sram_read_reset_i,
 		sig_o => sram_read_reset_o
@@ -289,7 +320,7 @@ begin
 
 	syncsignal_need_mute : entity work.syncsignal
 	port map(
-		target_clk => clk16M,
+		target_clk => audioclk,
 		sys_reset => sys_reset,
 		sig_i => need_mute,
 		sig_o => need_mute_16m
@@ -300,9 +331,9 @@ begin
 
 	-- Synchronous comparison of sram_read and write pointers
 	-- to genenerate sram_buffer_empty signal
-	process(clk16M)
+	process(audioclk)
 	begin
-		if rising_edge(clk16M) then
+		if rising_edge(audioclk) then
 			if sram_read_addr = (sram_write_addr_16m - 1) then
 				sram_buffer_empty_16m <= '1';
 			else
@@ -311,9 +342,9 @@ begin
 		end if;
 	end process;
 	
-	process(clk16M_slow)
+	process(audioclk_slow)
 	begin
-		if rising_edge(clk16M_slow) then
+		if rising_edge(audioclk_slow) then
 			volume_left_woofer_16m <= volume_left_woofer_i;
 			volume_left_lowmid_16m <= volume_left_lowmid_i;
 			volume_left_uppermid_16m <= volume_left_uppermid_i;
@@ -322,6 +353,36 @@ begin
 			volume_right_lowmid_16m <= volume_right_lowmid_i;
 			volume_right_uppermid_16m <= volume_right_uppermid_i;
 			volume_right_tweeter_16m <= volume_right_tweeter_i;
+		end if;
+	end process;
+	
+	-- Loading clock profile for audioclk:
+	-- Number of states for bitclk, lrclk, and how many
+	-- extra MSB bits to shift at the start
+	process(audioclk)
+	begin
+		if rising_edge(audioclk) then
+		
+			if audioclk_count = 0 and cmd_freq_select /= last_freq_select then
+				last_freq_select <= cmd_freq_select;
+				if cmd_freq_select = "01" then
+					dac_clk_max <= MAXCOUNT_28M_44;
+					dac_clk_lrclk <= LRCLK_28M_44;
+					dac_clk_bitclk <= BITCLK_28M_44;
+					dac_clk_msb <= MSBCOUNT_28M_44;
+				elsif cmd_freq_select = "10" then
+					dac_clk_max <= MAXCOUNT_28M_48;
+					dac_clk_lrclk <= LRCLK_28M_48;
+					dac_clk_bitclk <= BITCLK_28M_48;
+					dac_clk_msb <= MSBCOUNT_28M_48;
+				else
+					dac_clk_max <= MAXCOUNT_16M;
+					dac_clk_lrclk <= LRCLK_16M;
+					dac_clk_bitclk <= BITCLK_16M;
+					dac_clk_msb <= MSBCOUNT_16M;
+				end if;
+			end if;
+		
 		end if;
 	end process;
 	
@@ -342,164 +403,94 @@ begin
 	
 	
 	
-	-- Bypass multiplier if volume is zero (we want a perfect mute)
-	-- or max (we want the exact samples)
-	multiplier_result <= X"000000" when multiplier_volume = 0 else
-		multiplier_sample when multiplier_volume(8) = '1' else
-		multiplier_output;
-	
-	
-	-- Multiply sample by volume
-	-- 383 - 6 * 8 - 1 = 334
-	process(clk16M, sys_reset)
-	begin
-		if sys_reset = '1' then
-			multiplier_sample <= (others => '0');
-			multiplier_volume <= (others => '0');
-			multiplier_ce <= '0';
-		elsif rising_edge(clk16M) then
-			
-			
-			if clk16M_count = 334 then
-				multiplier_sample <= left_woofer_last_sample;
-				multiplier_volume <= volume_left_woofer_current;
-		
-				-- Turn on the multiplier for the first channel
-				multiplier_ce <= '1';
-				
-			end if;
-			
-			if clk16M_count = 340 then
-				multiplier_sample <= right_woofer_last_sample;
-				multiplier_volume <= volume_right_woofer_current;
-			end if;
-			
-			if clk16M_count = 346 then
-				multiplier_sample <= left_lowmid_last_sample;
-				multiplier_volume <= volume_left_lowmid_current;
-			end if;
-			
-			if clk16M_count = 352 then
-				multiplier_sample <= right_lowmid_last_sample;
-				multiplier_volume <= volume_right_lowmid_current;
-			end if;
-			
-			if clk16M_count = 358 then
-				multiplier_sample <= left_uppermid_last_sample;
-				multiplier_volume <= volume_left_uppermid_current;
-			end if;
-			
-			if clk16M_count = 364 then
-				multiplier_sample <= right_uppermid_last_sample;
-				multiplier_volume <= volume_right_uppermid_current;
-			end if;
-			
-			if clk16M_count = 370 then
-				multiplier_sample <= left_tweeter_last_sample;
-				multiplier_volume <= volume_left_tweeter_current;
-			end if;
-			
-			if clk16M_count = 376 then
-				multiplier_sample <= right_tweeter_last_sample;
-				multiplier_volume <= volume_right_tweeter_current;
-			end if;
-			
-			-- When the last channel is complete we can turn off the multiplier
-			if clk16M_count = 382 then
-				multiplier_ce <= '0';
-			end if;
-			
-		end if;
-	
-	end process;
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	-- Main state machine to generate audio signals.
+	--
+	-- Main state machine in audioclk domain.  There are a few functions that
+	-- are closely tied together here:
 	-- 
-	-- 1. Reduce 16.9344 MHz input clock down to bitclk and lrclk
-	-- 2. Reads data from SRAM and loads in to shift registers at the right time
-	-- 3. Shifts data out of shift registers in synch with bitclk and lrclk
-	-- 
-	process(clk16M, sys_reset)
+	-- 1. Generate bitclk, lrclk, and data shift registers for DACs.
+	-- 2. Read from SRAM into temporary last_sample registers, which will be fed
+	--    into the multipliers for volume control.  This is tied to #1 because
+	--    we track even frames and the state machine for #1 may need to jump
+	--    backwards if we need to get back in sync with an even frame.
+	--
+	process(audioclk, sys_reset)
 	begin
 
 		if sys_reset = '1' then
-			clk16M_count <= (others => '0');
-			bitclk_i <= '0';
-			lrclk_i <= '0';
-			left_woofer_shift_reg <= (others => '0');
-			left_lowmid_shift_reg <= (others => '0');
-			left_uppermid_shift_reg <= (others => '0');
-			left_tweeter_shift_reg <= (others => '0');
-			right_woofer_shift_reg <= (others => '0');
-			right_lowmid_shift_reg <= (others => '0');
-			right_uppermid_shift_reg <= (others => '0');
-			right_tweeter_shift_reg <= (others => '0');
-			left_woofer_load_reg <= (others => '0');
-			left_lowmid_load_reg <= (others => '0');
-			left_uppermid_load_reg <= (others => '0');
-			left_tweeter_load_reg <= (others => '0');
-			right_woofer_load_reg <= (others => '0');
-			right_lowmid_load_reg <= (others => '0');
-			right_uppermid_load_reg <= (others => '0');
-			right_tweeter_load_reg <= (others => '0');
-			left_woofer_last_sample <= (others => '0');
-			left_lowmid_last_sample <= (others => '0');
-			left_uppermid_last_sample <= (others => '0');
-			left_tweeter_last_sample <= (others => '0');
-			right_woofer_last_sample <= (others => '0');
-			right_lowmid_last_sample <= (others => '0');
-			right_uppermid_last_sample <= (others => '0');
-			right_tweeter_last_sample <= (others => '0');
 			sram_read <= '0';
 			sram_read_addr <= (others => '1');
 			sram_buff_need_more_16_i <= '0';
-			next_dac_load_reg <= LEFT_WOOFER;
-			volume_left_woofer_current <= (others => '0');
-			volume_left_lowmid_current <= (others => '0');
-			volume_left_uppermid_current <= (others => '0');
-			volume_left_tweeter_current <= (others => '0');
-			volume_right_woofer_current <= (others => '0');
-			volume_right_lowmid_current <= (others => '0');
-			volume_right_uppermid_current <= (others => '0');
-			volume_right_tweeter_current <= (others => '0');
-			volumecontrol_i <= (others => '0');
-			volumecontrol_target_i <= (others => '0');
-		elsif rising_edge(clk16M) then
+		elsif rising_edge(audioclk) then
 			
 			-- By default don't read from SRAM
 			sram_read <= '0';
 			
 			sram_buff_need_more_16_i <= '0';
 			
-			if clk16M_count = 383 then
-				clk16M_count <= (others => '0');
-			else
-				clk16M_count <= clk16M_count + 1;
-			end if;
 			
 			-- bitclk
-			if (clk16M_count(3 downto 0) = 0) then
-				bitclk_i <= '0';
-			end if;
-			if (clk16M_count(3 downto 0) = 8) then
-				bitclk_i <= '1';
+			if bitclk_count = dac_clk_bitclk then
+				
+				bitclk_i <= not bitclk_i;
+				bitclk_count <= (others => '0');
+				
+				-- Falling edge of bitclk
+				if bitclk_i = '1' then
+					
+					-- If we have skipped past the MSBs, start shifting
+					if msb_count = dac_clk_msb then
+					
+						left_woofer_shift_reg(19 downto 0) <= left_woofer_shift_reg(18 downto 0) & "0";
+						right_woofer_shift_reg(19 downto 0) <= right_woofer_shift_reg(18 downto 0) & "0";
+						left_lowmid_shift_reg(19 downto 0) <= left_lowmid_shift_reg(18 downto 0) & "0";
+						right_lowmid_shift_reg(19 downto 0) <= right_lowmid_shift_reg(18 downto 0) & "0";
+						left_uppermid_shift_reg(19 downto 0) <= left_uppermid_shift_reg(18 downto 0) & "0";
+						right_uppermid_shift_reg(19 downto 0) <= right_uppermid_shift_reg(18 downto 0) & "0";
+						left_tweeter_shift_reg(19 downto 0) <= left_tweeter_shift_reg(18 downto 0) & "0";
+						right_tweeter_shift_reg(19 downto 0) <= right_tweeter_shift_reg(18 downto 0) & "0";
+						
+					else
+						
+						msb_count <= msb_count + 1;
+						
+					end if;
+					
+				end if;
+				
+			else
+				bitclk_count <= bitclk_count + 1;
 			end if;
 			
+			
 			-- lrclk
-			if (clk16M_count = 192) then
+			if audioclk_count = dac_clk_max then
+				audioclk_count <= (others => '0');
+				msb_count <= (others => '0');
+			else
+				audioclk_count <= audioclk_count + 1;
+			end if;
+			
+			if audioclk_count = 0 then
+				lrclk_i <= '0';
+			elsif audioclk_count = dac_clk_lrclk then
 				lrclk_i <= '1';
 			end if;
-			if (clk16M_count = 0) then
-				lrclk_i <= '0';
+			
+			
+			-- Load shift registers
+			if audioclk_count = 0 then
+				
+				left_woofer_shift_reg <= left_woofer_load_reg;
+				right_woofer_shift_reg <= right_woofer_load_reg;
+				left_lowmid_shift_reg <= left_lowmid_load_reg;
+				right_lowmid_shift_reg <= right_lowmid_load_reg;
+				left_uppermid_shift_reg <= left_uppermid_load_reg;
+				right_uppermid_shift_reg <= right_uppermid_load_reg;
+				left_tweeter_shift_reg <= left_tweeter_load_reg;
+				right_tweeter_shift_reg <= right_tweeter_load_reg;
+				
 			end if;
+
 			
 			-- Held in synchronous 'reset' state by the other state machine below
 			if sram_read_reset_o = '1' then
@@ -514,9 +505,9 @@ begin
 
 					-- Generate SRAM read signal and increment read address
 					-- 334 (below) - 8 - 1 = 325
-					if clk16M_count = 325 or clk16M_count = 326 or clk16M_count = 327 or
-					 clk16M_count = 328 or clk16M_count = 329 or clk16M_count = 330 or
-					 clk16M_count = 331 or clk16M_count = 332 then
+					if audioclk_count = 325 or audioclk_count = 326 or audioclk_count = 327 or
+					 audioclk_count = 328 or audioclk_count = 329 or audioclk_count = 330 or
+					 audioclk_count = 331 or audioclk_count = 332 then
 					
 						-- Get next data from sram
 						sram_read_addr <= sram_read_addr + 1;
@@ -532,21 +523,24 @@ begin
 					
 					-- Capture output of SRAM
 					-- count is one more than the above read signals
-					if clk16M_count = 326 or clk16M_count = 327 or clk16M_count = 328 or
-						 clk16M_count = 329 or clk16M_count = 330 or clk16M_count = 331 or
-						 clk16M_count = 332 or clk16M_count = 333 then
+					if audioclk_count = 326 or audioclk_count = 327 or audioclk_count = 328 or
+						 audioclk_count = 329 or audioclk_count = 330 or audioclk_count = 331 or
+						 audioclk_count = 332 or audioclk_count = 333 then
 						 
 						if next_dac_load_reg = LEFT_WOOFER or sram_data_out(31) = '1' then
 						
 							left_woofer_last_sample <= sram_data_out(23 downto 0);
 							next_dac_load_reg <= RIGHT_WOOFER;
 							
+-- TODO: This no longer works with other clock profiles because bitclk count
+-- is independent and this may cross an lrclk boundary depending where it is set
+							
 							-- When this state machine first starts, it will read SRAM address zero
 							-- where the left woofer sample should be stored.  The line below will
 							-- have no effect because count will be set to 327 as well.
 							-- If the state machine below and this one get out of sync, then
 							-- this line will force this state machine to get back in sync.
-							clk16M_count <= std_logic_vector(to_unsigned(327, clk16M_count'length));
+							audioclk_count <= std_logic_vector(to_unsigned(327, audioclk_count'length));
 						
 						elsif next_dac_load_reg = RIGHT_WOOFER then
 							
@@ -591,137 +585,186 @@ begin
 				
 			end if; -- not read_reset
 			
+		end if;
+
+	end process;
+	
+	
+	
+	-- Gradual volume control to avoid poping sounds
+	-- These state numbers can be anything before the multiplier runs,
+	-- but we choose the same numbers as reading from SRAM so that hopefully
+	-- the "count = X" signal can be reused for loading both registers
+	process(audioclk)
+	begin
+	
+		if rising_edge(audioclk) then
 			
-			
-			-- Shift register shifts on falling edge of bitclk
-			if clk16M_count = 80 or clk16M_count = 96 or clk16M_count = 112 or clk16M_count = 128
-				or clk16M_count = 144 or clk16M_count = 160 or clk16M_count = 176
-				or clk16M_count = 192 or clk16M_count = 208 or clk16M_count = 224
-				or clk16M_count = 240 or clk16M_count = 256 or clk16M_count = 272
-				or clk16M_count = 288 or clk16M_count = 304 or clk16M_count = 320
-				or clk16M_count = 336 or clk16M_count = 352 or clk16M_count = 368 then
-				
-				left_woofer_shift_reg(19 downto 0) <= left_woofer_shift_reg(18 downto 0) & "0";
-				right_woofer_shift_reg(19 downto 0) <= right_woofer_shift_reg(18 downto 0) & "0";
-				left_lowmid_shift_reg(19 downto 0) <= left_lowmid_shift_reg(18 downto 0) & "0";
-				right_lowmid_shift_reg(19 downto 0) <= right_lowmid_shift_reg(18 downto 0) & "0";
-				left_uppermid_shift_reg(19 downto 0) <= left_uppermid_shift_reg(18 downto 0) & "0";
-				right_uppermid_shift_reg(19 downto 0) <= right_uppermid_shift_reg(18 downto 0) & "0";
-				left_tweeter_shift_reg(19 downto 0) <= left_tweeter_shift_reg(18 downto 0) & "0";
-				right_tweeter_shift_reg(19 downto 0) <= right_tweeter_shift_reg(18 downto 0) & "0";
-				
-			end if; -- Shift registers
-			
-			
-			
-			-- Gradual volume control to avoid poping sounds
-			-- These state numbers can be anything before the multiplier runs,
-			-- but we choose the same numbers as reading from SRAM so that hopefully
-			-- the "count = X" signal can be reused for loading both registers
-			if clk16M_count = 325 then
+			if audioclk_count = 325 then
 			
 				volumecontrol_i <= volume_left_woofer_current;
 				volumecontrol_target_i <= volume_left_woofer_16m;
 				
-			elsif clk16M_count = 326 then
+			elsif audioclk_count = 326 then
 				
 				volume_left_woofer_current <= volumecontrol_o;
 				
 				volumecontrol_i <= volume_right_woofer_current;
 				volumecontrol_target_i <= volume_right_woofer_16m;
 				
-			elsif clk16M_count = 327 then
+			elsif audioclk_count = 327 then
 			
 				volume_right_woofer_current <= volumecontrol_o;
 				
 				volumecontrol_i <= volume_left_lowmid_current;
 				volumecontrol_target_i <= volume_left_lowmid_16m;
 				
-			elsif clk16M_count = 328 then
+			elsif audioclk_count = 328 then
 				
 				volume_left_lowmid_current <= volumecontrol_o;
 				
 				volumecontrol_i <= volume_right_lowmid_current;
 				volumecontrol_target_i <= volume_right_lowmid_16m;
 				
-			elsif clk16M_count = 329 then
+			elsif audioclk_count = 329 then
 			
 				volume_right_lowmid_current <= volumecontrol_o;
 				
 				volumecontrol_i <= volume_left_uppermid_current;
 				volumecontrol_target_i <= volume_left_uppermid_16m;
 				
-			elsif clk16M_count = 330 then
+			elsif audioclk_count = 330 then
 				
 				volume_left_uppermid_current <= volumecontrol_o;
 				
 				volumecontrol_i <= volume_right_uppermid_current;
 				volumecontrol_target_i <= volume_right_uppermid_16m;
 				
-			elsif clk16M_count = 331 then
+			elsif audioclk_count = 331 then
 			
 				volume_right_uppermid_current <= volumecontrol_o;
 				
 				volumecontrol_i <= volume_left_tweeter_current;
 				volumecontrol_target_i <= volume_left_tweeter_16m;
 				
-			elsif clk16M_count = 332 then
+			elsif audioclk_count = 332 then
 				
 				volume_left_tweeter_current <= volumecontrol_o;
 				
 				volumecontrol_i <= volume_right_tweeter_current;
 				volumecontrol_target_i <= volume_right_tweeter_16m;
 				
-			elsif clk16M_count = 333 then
+			elsif audioclk_count = 333 then
 				
 				volume_right_tweeter_current <= volumecontrol_o;
 				
 			end if;
 			
-			
-			
-			-- Save result of multiplier.
-			-- If the left woofer was loaded into the multiplier at state 334,
-			-- then 6 cycles later is 340, when we have the result
-			if clk16M_count = 340 then
-				left_woofer_load_reg <= multiplier_result(23 downto 4);
-			elsif clk16M_count = 346 then
-				right_woofer_load_reg <= multiplier_result(23 downto 4);
-			elsif clk16M_count = 352 then
-				left_lowmid_load_reg <= multiplier_result(23 downto 4);
-			elsif clk16M_count = 358 then
-				right_lowmid_load_reg <= multiplier_result(23 downto 4);
-			elsif clk16M_count = 364 then
-				left_uppermid_load_reg <= multiplier_result(23 downto 4);
-			elsif clk16M_count = 370 then
-				right_uppermid_load_reg <= multiplier_result(23 downto 4);
-			elsif clk16M_count = 376 then
-				left_tweeter_load_reg <= multiplier_result(23 downto 4);
-			elsif clk16M_count = 382 then
-				right_tweeter_load_reg <= multiplier_result(23 downto 4);
-			end if;
-			
-			
-			-- Load shift registers.  Could also be state 64, which would cause
-			-- zeros to be shifted in at first rather than repeating the MSB
-			if clk16M_count = 8 then
-				
-				left_woofer_shift_reg <= left_woofer_load_reg;
-				right_woofer_shift_reg <= right_woofer_load_reg;
-				left_lowmid_shift_reg <= left_lowmid_load_reg;
-				right_lowmid_shift_reg <= right_lowmid_load_reg;
-				left_uppermid_shift_reg <= left_uppermid_load_reg;
-				right_uppermid_shift_reg <= right_uppermid_load_reg;
-				left_tweeter_shift_reg <= left_tweeter_load_reg;
-				right_tweeter_shift_reg <= right_tweeter_load_reg;
-				
-			end if;
-				
 		end if;
-
+	
 	end process;
 	
 	
+	
+	-- Bypass multiplier if volume is zero (we want a perfect mute)
+	-- or max (we want the exact samples)
+	multiplier_result <= X"000000" when multiplier_volume = 0 else
+		multiplier_sample when multiplier_volume(8) = '1' else
+		multiplier_output;
+	
+	
+	-- Multiply sample by volume
+	-- Start at state 383 - 6 * 8 - 1 = 334
+	process(audioclk)
+	begin
+	
+		if rising_edge(audioclk) then
+			
+			
+			if audioclk_count = 334 then
+				multiplier_sample <= left_woofer_last_sample;
+				multiplier_volume <= volume_left_woofer_current;
+		
+				-- Turn on the multiplier for the first channel
+				multiplier_ce <= '1';
+				
+			end if;
+			
+			if audioclk_count = 340 then
+				multiplier_sample <= right_woofer_last_sample;
+				multiplier_volume <= volume_right_woofer_current;
+			end if;
+			
+			if audioclk_count = 346 then
+				multiplier_sample <= left_lowmid_last_sample;
+				multiplier_volume <= volume_left_lowmid_current;
+			end if;
+			
+			if audioclk_count = 352 then
+				multiplier_sample <= right_lowmid_last_sample;
+				multiplier_volume <= volume_right_lowmid_current;
+			end if;
+			
+			if audioclk_count = 358 then
+				multiplier_sample <= left_uppermid_last_sample;
+				multiplier_volume <= volume_left_uppermid_current;
+			end if;
+			
+			if audioclk_count = 364 then
+				multiplier_sample <= right_uppermid_last_sample;
+				multiplier_volume <= volume_right_uppermid_current;
+			end if;
+			
+			if audioclk_count = 370 then
+				multiplier_sample <= left_tweeter_last_sample;
+				multiplier_volume <= volume_left_tweeter_current;
+			end if;
+			
+			if audioclk_count = 376 then
+				multiplier_sample <= right_tweeter_last_sample;
+				multiplier_volume <= volume_right_tweeter_current;
+			end if;
+			
+			-- When the last channel is complete we can turn off the multiplier
+			if audioclk_count = 382 then
+				multiplier_ce <= '0';
+			end if;
+			
+		end if;
+	
+	end process;
+	
+	
+	
+	-- Save result of multiplier.
+	-- The multiplier is designed to run in 6 cycles.
+	-- If the left woofer was loaded into the multiplier at state 334,
+	-- then 6 cycles later is 340, when we have the result
+	process(audioclk)
+	begin
+	
+		if rising_edge(audioclk) then
+			
+			if audioclk_count = 340 then
+				left_woofer_load_reg <= multiplier_result(23 downto 4);
+			elsif audioclk_count = 346 then
+				right_woofer_load_reg <= multiplier_result(23 downto 4);
+			elsif audioclk_count = 352 then
+				left_lowmid_load_reg <= multiplier_result(23 downto 4);
+			elsif audioclk_count = 358 then
+				right_lowmid_load_reg <= multiplier_result(23 downto 4);
+			elsif audioclk_count = 364 then
+				left_uppermid_load_reg <= multiplier_result(23 downto 4);
+			elsif audioclk_count = 370 then
+				right_uppermid_load_reg <= multiplier_result(23 downto 4);
+			elsif audioclk_count = 376 then
+				left_tweeter_load_reg <= multiplier_result(23 downto 4);
+			elsif audioclk_count = 382 then
+				right_tweeter_load_reg <= multiplier_result(23 downto 4);
+			end if;
+			
+		end if;
+	end process;
 	
 	
 	
@@ -1046,7 +1089,7 @@ begin
 	)
 	port map(
 		wr_clk => sys_clk,
-		rd_clk => clk16M,
+		rd_clk => audioclk,
 		rst => sys_reset,
 		din => sram_data_in,
 		wr_en => sram_write,
@@ -1056,6 +1099,7 @@ begin
 		dout => sram_data_out
 	);
 	
+	-- Interrupt register for when sram buffer needs more data
 	intreg_sram : entity work.interrupt_reg
 	port map(
 		sys_clk => sys_clk,
@@ -1065,15 +1109,17 @@ begin
 		rst_i => sram_buff_need_more_rst
 	);
 	
+	-- Volume control by multiplying each sample by the volume
 	multiplier : entity work.volumemultiplier
 	port map(
-		clk => clk16M,
+		clk => audioclk,
 		ce => multiplier_ce,
 		a => multiplier_sample,
 		b => multiplier_volume(7 downto 0),
 		p => multiplier_output
 	);
 	
+	-- Gradual volume change
 	volumefollow_inst : entity work.volumefollow
 	port map(
 		volume_i => volumecontrol_i,
