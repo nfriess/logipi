@@ -517,7 +517,7 @@ begin
 		inter_packet_data_reg <= (others => '0');
 		inter_packet_data_len <= (others => '0');
 		start_of_frame <= '1';
-		cmd_user_sig <= '0';
+		cmd_user_sig <= '1';
 		clk16Mwarning_rst <= '0';
 		-- Volume defaults to -12db
 		volume_left_woofer <= "0" & X"00";
