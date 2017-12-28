@@ -464,6 +464,7 @@ begin
 			
 			-- lrclk
 			if audioclk_count = dac_clk_max then
+				bitclk_count <= (others => '0');
 				audioclk_count <= (others => '0');
 				msb_count <= (others => '0');
 			else
