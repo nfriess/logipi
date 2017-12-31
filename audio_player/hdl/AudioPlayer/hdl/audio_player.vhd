@@ -167,16 +167,16 @@ architecture Behavioral of audio_player is
 	signal volume_right_tweeter : std_logic_vector(8 downto 0);
 
 	
-	-- External 16MHz clock
-	signal clk16M : std_logic;
+	-- External audio clock (16MHz, 28MHz, etc)
+	signal audioclk : std_logic;
 	-- Generated 16MHz clock using PLL
 	signal clk16Mgen : std_logic;
 	-- Output from clock MUX, one of the above clocks
-	signal clk16Mselected : std_logic;
+	signal audioclk_selected : std_logic;
 	
 	-- Monitoring the 16M clock to ensure that it is running
-	signal clk16Mactive, clk16Mactive_reset, clk16Mwarning_i, clk16Mwarning_o, clk16Mwarning_rst : std_logic;
-	signal clk16Mactive_count : std_logic_vector(7 downto 0);
+	signal audioclk_active, audioclk_active_reset, audioclk_warning_i, audioclk_warning_o, audioclk_warning_rst : std_logic;
+	signal audioclk_active_count : std_logic_vector(7 downto 0);
 	
 	-- Misc signals
 	signal reg_cs : std_logic ;
@@ -191,6 +191,7 @@ architecture Behavioral of audio_player is
 	signal dbg_eth_state, dbg_dac_state, dbg_sdram_bus_state : std_logic_vector(15 downto 0);
 	signal dbg_sram_read_addr, dbg_sram_write_addr : std_logic_vector(15 downto 0);
 	signal dbg_eth_next_sequence, dbg_ip_ident, dbg_ip_frag_offset, dbg_spi_readdata : std_logic_vector(15 downto 0);
+	signal cmd_freq_select : std_logic_vector(1 downto 0);
 begin
 
 sys_reset <= NOT PB(0); 
@@ -206,34 +207,34 @@ LED(0) <= dac_mute;
 dac_clk_oe <= SW(0);
 
 
-process (clk16M, clk16Mactive_reset)
+process (audioclk, audioclk_active_reset)
 begin
-	if clk16Mactive_reset = '1' then
-		clk16Mactive <= '0';
-	elsif rising_edge(clk16M) then
-		clk16Mactive <= '1';
+	if audioclk_active_reset = '1' then
+		audioclk_active <= '0';
+	elsif rising_edge(audioclk) then
+		audioclk_active <= '1';
 	end if;
 end process;
 
 process (sys_clk, sys_reset)
 begin
 	if sys_reset = '1' then
-		clk16Mactive_count <= (others => '0');
-		clk16Mactive_reset <= '0';
-		clk16Mwarning_i <= '0';
+		audioclk_active_count <= (others => '0');
+		audioclk_active_reset <= '0';
+		audioclk_warning_i <= '0';
 	elsif rising_edge(sys_clk) then
 		
-		clk16Mactive_count <= clk16Mactive_count + 1;
+		audioclk_active_count <= audioclk_active_count + 1;
 		
-		clk16Mactive_reset <= '0';
-		clk16Mwarning_i <= '0';
+		audioclk_active_reset <= '0';
+		audioclk_warning_i <= '0';
 		
-		if clk16Mactive_count = X"00" then
-			clk16Mactive_reset <= '1';
+		if audioclk_active_count = X"00" then
+			audioclk_active_reset <= '1';
 		end if;
 		
-		if clk16Mactive_count = X"FF" and clk16Mactive = '0' then
-			clk16Mwarning_i <= '1';
+		if audioclk_active_count = X"FF" and audioclk_active = '0' then
+			audioclk_warning_i <= '1';
 		end if;
 		
 	end if;
@@ -243,9 +244,9 @@ intreg_clk16M_warning : entity work.interrupt_reg
 	port map(
 		sys_clk => sys_clk,
 		sys_reset => sys_reset,
-		int_i => clk16Mwarning_i,
-		int_o => clk16Mwarning_o,
-		rst_i => clk16Mwarning_rst
+		int_i => audioclk_warning_i,
+		int_o => audioclk_warning_o,
+		rst_i => audioclk_warning_rst
 	);
 
 
@@ -672,6 +673,7 @@ ethernet_controller : entity work.ethernet
 		cmd_pause => cmd_pause,
 		cmd_reset_dac => cmd_reset_dac,
 		cmd_user_sig => user_sig,
+		cmd_freq_select => cmd_freq_select,
 		
 		volume_left_woofer_o => volume_left_woofer,
 		volume_left_lowmid_o => volume_left_lowmid,
@@ -682,8 +684,8 @@ ethernet_controller : entity work.ethernet
 		volume_right_uppermid_o => volume_right_uppermid,
 		volume_right_tweeter_o => volume_right_tweeter,
 		
-		clk16Mwarning => clk16Mwarning_o,
-		clk16Mwarning_rst => clk16Mwarning_rst,
+		audioclk_warning => audioclk_warning_o,
+		audioclk_warning_rst => audioclk_warning_rst,
 		
 		dbg_state => dbg_eth_state,
 		dbg_next_sequence => dbg_eth_next_sequence,
@@ -707,7 +709,7 @@ dac_controller : entity work.dac_controller
 		sys_reset => sys_reset,
 		
 		dac_clk_oe => dac_clk_oe,
-		clk16M => clk16Mselected,
+		audioclk => audioclk_selected,
 		
 		bitclk_o => dac_bitclk_o,
 		lrclk_o => dac_lrclk_o,
@@ -735,6 +737,7 @@ dac_controller : entity work.dac_controller
 		cmd_mute => cmd_mute,
 		cmd_pause => cmd_pause,
 		cmd_reset_dac => cmd_reset_dac,
+		cmd_freq_select => cmd_freq_select,
 		
 		volume_left_woofer_i => volume_left_woofer,
 		volume_left_lowmid_i => volume_left_lowmid,
@@ -758,7 +761,7 @@ PMOD4(1) <= dac_bitclk_o;
 PMOD4(4) <= dac_mute;
 PMOD4(5) <= user_sig;
 PMOD4(6) <= idle_sig;
-PMOD4(7) <= not clk16Mwarning_o;
+PMOD4(7) <= not audioclk_warning_o;
 
 PMOD3(0) <= dac_left_woofer_data;
 PMOD3(1) <= dac_right_woofer_data;
@@ -770,16 +773,16 @@ PMOD3(6) <= dac_left_tweeter_data;
 PMOD3(7) <= dac_right_tweeter_data;
 
 -- PMOD1_10_ARD_D5
-BUFG_16m : BUFG port map (O => clk16M,    I => PMOD1(7));
+BUFG_16m : BUFG port map (O => audioclk,    I => PMOD1(7));
 
 clk16M_mux : BUFGMUX
 generic map (
 	CLK_SEL_TYPE => "SYNC"  -- Glitchles ("SYNC") or fast ("ASYNC") clock switch-over
 )
 port map (
-	O => clk16Mselected,   -- 1-bit output: Clock buffer output
+	O => audioclk_selected,   -- 1-bit output: Clock buffer output
 	I0 => clk16Mgen, -- 1-bit input: Clock buffer input (S=0)
-	I1 => clk16M, -- 1-bit input: Clock buffer input (S=1)
+	I1 => audioclk, -- 1-bit input: Clock buffer input (S=1)
 	S => dac_clk_oe    -- 1-bit input: Clock buffer select
 );
 

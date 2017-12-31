@@ -42,6 +42,7 @@ entity ethernet is
 				cmd_pause : out STD_LOGIC;
 				cmd_reset_dac : out STD_LOGIC;
 				cmd_user_sig : out STD_LOGIC;
+				cmd_freq_select : out STD_LOGIC_VECTOR(1 downto 0);
 				
 				volume_left_woofer_o : out STD_LOGIC_VECTOR(8 downto 0);
 				volume_left_lowmid_o : out STD_LOGIC_VECTOR(8 downto 0);
@@ -53,8 +54,8 @@ entity ethernet is
 				volume_right_tweeter_o : out STD_LOGIC_VECTOR(8 downto 0);
 				
 				
-				clk16Mwarning : in STD_LOGIC;
-				clk16Mwarning_rst : out STD_LOGIC;
+				audioclk_warning : in STD_LOGIC;
+				audioclk_warning_rst : out STD_LOGIC;
 				
 				
 				dbg_state : out STD_LOGIC_VECTOR(15 downto 0);
@@ -353,7 +354,7 @@ architecture Behavioral of ethernet is
 	signal arp_tpa : std_logic_vector(31 downto 0);
 	
 	-- Data saved from audio packet
-	signal audio_cmd : std_logic_vector(31 downto 0);
+	signal audio_cmd : std_logic_vector(31 downto 0) := X"00000005"; -- PAUSE | MUTE;
 	signal audio_sequence : std_logic_vector(31 downto 0);
 	signal audio_next_sequence : std_logic_vector(31 downto 0);
 	signal audio_tmp_sequence : std_logic_vector(31 downto 0);
@@ -436,6 +437,7 @@ begin
 	
 	cmd_mute <= audio_cmd(0);
 	cmd_pause <= audio_cmd(2);
+	cmd_freq_select <= audio_cmd(7 downto 6);
 	
 	sdram_address <= "00000000" & sdram_write_ptr;
 	sdram_complete_address <= "00000000" & sdram_complete_ptr;
@@ -507,7 +509,7 @@ begin
 		rx_next_rxtail <= X"5FFE";
 		ten_hz_int_rst <= '0';
 		one_hz_counter <= (others => '0');
-		audio_cmd <= X"00000005"; -- PAUSE | MUTE
+		--audio_cmd <= X"00000005"; -- PAUSE | MUTE
 		audio_sequence <= X"00000000";
 		audio_next_sequence <= X"00000000";
 		audio_tmp_sequence <= X"00000000";
@@ -518,7 +520,7 @@ begin
 		inter_packet_data_len <= (others => '0');
 		start_of_frame <= '1';
 		cmd_user_sig <= '1';
-		clk16Mwarning_rst <= '0';
+		audioclk_warning_rst <= '0';
 		-- Volume defaults to -12db
 		volume_left_woofer <= "0" & X"00";
 		volume_left_lowmid <= "0" & X"00";
@@ -531,7 +533,7 @@ begin
 	elsif rising_edge(sys_clk) then
 	
 		ten_hz_int_rst <= '0';
-		clk16Mwarning_rst <= '0';
+		audioclk_warning_rst <= '0';
 		
 		case state is
 		
@@ -2768,9 +2770,9 @@ begin
 			when TX_STATUS_STATUS =>
 				-- Write 4 bytes of status bitmask
 				
-				clk16Mwarning_rst <= '1';
+				audioclk_warning_rst <= '1';
 				
-				spi_writedata <= X"0000000" & "000" & clk16Mwarning;
+				spi_writedata <= X"0000000" & "000" & audioclk_warning;
 				spi_datacount <= "100";
 				spi_auto_disable <= '1';
 				
