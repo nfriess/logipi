@@ -89,7 +89,7 @@ architecture Behavioral of dac_controller is
 	constant BITCLK_28M_48 : positive := 12;
 	
 	-- How many extra times MSB should be shifted in
-	constant MSBCOUNT_16M : positive := 4;
+	constant MSBCOUNT_16M : positive := 2;
 	constant MSBCOUNT_28M_44 : positive := 3;
 	constant MSBCOUNT_28M_48 : positive := 4;
 
