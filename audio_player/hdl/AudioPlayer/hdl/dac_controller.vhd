@@ -467,6 +467,7 @@ begin
 				bitclk_count <= (others => '0');
 				audioclk_count <= (others => '0');
 				msb_count <= (others => '0');
+				bitclk_i <= '0';
 			else
 				audioclk_count <= audioclk_count + 1;
 			end if;
