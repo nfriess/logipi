@@ -83,18 +83,19 @@ architecture Behavioral of dac_controller is
 	constant LRCLK_28M_44 : positive := 286;
 	constant LRCLK_28M_48 : positive := 288;
 	
-	-- How often bitclk needs to be flipped
-	constant BITCLK_16M : positive := 8;
-	constant BITCLK_28M_44 : positive := 14;
-	constant BITCLK_28M_48 : positive := 12;
+	-- How often bitclk needs to be flipped (minus 1)
+	constant BITCLK_16M : positive := 7;
+	constant BITCLK_28M_44 : positive := 13;
+	constant BITCLK_28M_48 : positive := 11;
 	
-	-- How many extra times MSB should be shifted in
-	constant MSBCOUNT_16M : positive := 2;
+	-- How many extra times MSB should be shifted in (minus 1)
+	constant MSBCOUNT_16M : positive := 4;
 	constant MSBCOUNT_28M_44 : positive := 3;
 	constant MSBCOUNT_28M_48 : positive := 4;
 
-	signal sram_read_reset_i : std_logic;
+	signal sram_read_reset_i : std_logic := '1';
 	signal sram_read_reset_o : std_logic;
+	signal sram_read_reset_sync : std_logic := '1';
 	
 
 	signal audioclk_count : std_logic_vector(11 downto 0) := X"000";
@@ -295,6 +296,7 @@ begin
 	);
 
 	syncsignal_read_reset : entity work.syncsignal
+	generic map( DEFAULT_VAL => '1' )
 	port map(
 		target_clk => audioclk,
 		sys_reset => sys_reset,
@@ -468,6 +470,7 @@ begin
 				audioclk_count <= (others => '0');
 				msb_count <= (others => '0');
 				bitclk_i <= '0';
+				sram_read_reset_sync <= sram_read_reset_o;
 			else
 				audioclk_count <= audioclk_count + 1;
 			end if;
@@ -495,10 +498,12 @@ begin
 
 			
 			-- Held in synchronous 'reset' state by the other state machine below
-			if sram_read_reset_o = '1' then
+			if sram_read_reset_sync = '1' then
 				
 				--sram_read <= '0';
 				sram_read_addr <= (others => '1');
+				
+				next_dac_load_reg <= LEFT_WOOFER;
 				
 			else
 			
@@ -528,7 +533,7 @@ begin
 					if audioclk_count = 326 or audioclk_count = 327 or audioclk_count = 328 or
 						 audioclk_count = 329 or audioclk_count = 330 or audioclk_count = 331 or
 						 audioclk_count = 332 or audioclk_count = 333 then
-						 
+						
 						if next_dac_load_reg = LEFT_WOOFER or sram_data_out(31) = '1' then
 						
 							left_woofer_last_sample <= sram_data_out(23 downto 0);
@@ -536,7 +541,7 @@ begin
 							
 -- TODO: This no longer works with other clock profiles because bitclk count
 -- is independent and this may cross an lrclk boundary depending where it is set
-							
+
 							-- When this state machine first starts, it will read SRAM address zero
 							-- where the left woofer sample should be stored.  The line below will
 							-- have no effect because count will be set to 327 as well.
@@ -785,7 +790,7 @@ begin
 			sram_write <= '0';
 			sram_write_addr <= (others => '0');
 			sram_data_in <= (others => '0');
-			sram_read_reset_i <= '1';
+			--sram_read_reset_i <= '1';
 			sram_buff_need_more_rst <= '0';
 			dbg_count <= (others => '0');
 			sample_count_in_frame <= 0;
@@ -804,6 +809,7 @@ begin
 					
 					sram_write_addr <= (others => '0');
 					sram_read_reset_i <= '1';
+					sample_count_in_frame <= 0;
 					
 					sdram_cycle <= '0';
 					

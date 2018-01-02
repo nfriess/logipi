@@ -202,8 +202,6 @@ sys_clk <= clk_100Mhz;
 LED(0) <= dac_mute;
 --LED(1) <= '0';
 
---PMOD2(0) <= dac_mute;
-
 dac_clk_oe <= SW(0);
 
 
