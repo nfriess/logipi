@@ -53,7 +53,7 @@ entity dac_controller is
 			  cmd_pause : in STD_LOGIC;
 			  cmd_reset_dac : in STD_LOGIC;
 			  
-			  cmd_freq_select : in STD_LOGIC_VECTOR(1 downto 0);
+			  cmd_freq_select : in STD_LOGIC_VECTOR(2 downto 0);
 			  
 			  volume_left_woofer_i : in STD_LOGIC_VECTOR(8 downto 0);
 			  volume_left_lowmid_i : in STD_LOGIC_VECTOR(8 downto 0);
@@ -72,7 +72,11 @@ entity dac_controller is
 end dac_controller;
 
 architecture Behavioral of dac_controller is
-
+	
+	-- Number of DAC bits
+	constant DAC_NUM_BITS : positive := 20;
+	
+	
 	-- Full lrclk cycle and max number of states
 	constant MAXCOUNT_16M : positive := 383;
 	constant MAXCOUNT_28M_44 : positive := 639;
@@ -85,14 +89,24 @@ architecture Behavioral of dac_controller is
 	
 	-- How often bitclk needs to be flipped (minus 1)
 	constant BITCLK_16M : positive := 7;
+	constant BITCLK_16M_FAST : positive := 1;
 	constant BITCLK_28M_44 : positive := 13;
 	constant BITCLK_28M_48 : positive := 11;
 	
-	-- How many extra times MSB should be shifted in (minus 1)
+	-- How many bitclks to wait before shifting in the MSB
 	constant MSBCOUNT_16M : positive := 4;
+	constant MSBCOUNT_16M_EARLY : positive := 4;
+	constant MSBCOUNT_16M_MID : positive := 38;
+	constant MSBCOUNT_16M_LATE : positive := 72;
 	constant MSBCOUNT_28M_44 : positive := 3;
 	constant MSBCOUNT_28M_48 : positive := 4;
-
+	
+	-- Do we allow the bitclk to run before the MSB of the data word?
+	-- If true, then the MSB is clocked in extra times according to msb_count
+	-- If false, then the bitclk is '0' until it is time to send the msb
+	constant OUTPUT_BITCLK_BEFORE_MSB : std_logic := '1';
+	constant ZERO_BITCLK_BEFORE_MSB : std_logic := '0';
+	
 	signal sram_read_reset_i : std_logic := '1';
 	signal sram_read_reset_o : std_logic;
 	signal sram_read_reset_sync : std_logic := '1';
@@ -100,14 +114,16 @@ architecture Behavioral of dac_controller is
 
 	signal audioclk_count : std_logic_vector(11 downto 0) := X"000";
 	signal bitclk_count : std_logic_vector(5 downto 0) := "000000";
-	signal msb_count : std_logic_vector(2 downto 0) := "000";
+	signal msb_count : std_logic_vector(11 downto 0) := X"000";
+	signal data_shift_count : std_logic_vector(4 downto 0) := "00000";
 	
 	signal dac_clk_max : positive := MAXCOUNT_16M;
 	signal dac_clk_lrclk : positive := LRCLK_16M;
 	signal dac_clk_bitclk : positive := BITCLK_16M;
 	signal dac_clk_msb : positive := MSBCOUNT_16M;
+	signal output_bitclk_msb : std_logic := OUTPUT_BITCLK_BEFORE_MSB;
 	
-	signal last_freq_select : std_logic_vector(1 downto 0) := "11";
+	signal last_freq_select : std_logic_vector(2 downto 0) := "111";
 	
 	signal lrclk_i : std_logic := '0';
 	signal bitclk_i : std_logic := '0';
@@ -126,23 +142,23 @@ architecture Behavioral of dac_controller is
 	signal right_uppermid_last_sample : std_logic_vector(23 downto 0) := X"000000";
 	signal right_woofer_last_sample : std_logic_vector(23downto 0) := X"000000";
 	
-	signal left_tweeter_load_reg : std_logic_vector(19 downto 0) := X"00000";
-	signal left_lowmid_load_reg : std_logic_vector(19 downto 0) := X"00000";
-	signal left_uppermid_load_reg : std_logic_vector(19 downto 0) := X"00000";
-	signal left_woofer_load_reg : std_logic_vector(19 downto 0) := X"00000";
-	signal right_tweeter_load_reg : std_logic_vector(19 downto 0) := X"00000";
-	signal right_lowmid_load_reg : std_logic_vector(19 downto 0) := X"00000";
-	signal right_uppermid_load_reg : std_logic_vector(19 downto 0) := X"00000";
-	signal right_woofer_load_reg : std_logic_vector(19 downto 0) := X"00000";
+	signal left_tweeter_load_reg : std_logic_vector(DAC_NUM_BITS-1 downto 0) := X"00000";
+	signal left_lowmid_load_reg : std_logic_vector(DAC_NUM_BITS-1 downto 0) := X"00000";
+	signal left_uppermid_load_reg : std_logic_vector(DAC_NUM_BITS-1 downto 0) := X"00000";
+	signal left_woofer_load_reg : std_logic_vector(DAC_NUM_BITS-1 downto 0) := X"00000";
+	signal right_tweeter_load_reg : std_logic_vector(DAC_NUM_BITS-1 downto 0) := X"00000";
+	signal right_lowmid_load_reg : std_logic_vector(DAC_NUM_BITS-1 downto 0) := X"00000";
+	signal right_uppermid_load_reg : std_logic_vector(DAC_NUM_BITS-1 downto 0) := X"00000";
+	signal right_woofer_load_reg : std_logic_vector(DAC_NUM_BITS-1 downto 0) := X"00000";
 	
-	signal left_tweeter_shift_reg : std_logic_vector(19 downto 0) := X"00000";
-	signal left_lowmid_shift_reg : std_logic_vector(19 downto 0) := X"00000";
-	signal left_uppermid_shift_reg : std_logic_vector(19 downto 0) := X"00000";
-	signal left_woofer_shift_reg : std_logic_vector(19 downto 0) := X"00000";
-	signal right_tweeter_shift_reg : std_logic_vector(19 downto 0) := X"00000";
-	signal right_lowmid_shift_reg : std_logic_vector(19 downto 0) := X"00000";
-	signal right_uppermid_shift_reg : std_logic_vector(19 downto 0) := X"00000";
-	signal right_woofer_shift_reg : std_logic_vector(19 downto 0) := X"00000";
+	signal left_tweeter_shift_reg : std_logic_vector(DAC_NUM_BITS-1 downto 0) := X"00000";
+	signal left_lowmid_shift_reg : std_logic_vector(DAC_NUM_BITS-1 downto 0) := X"00000";
+	signal left_uppermid_shift_reg : std_logic_vector(DAC_NUM_BITS-1 downto 0) := X"00000";
+	signal left_woofer_shift_reg : std_logic_vector(DAC_NUM_BITS-1 downto 0) := X"00000";
+	signal right_tweeter_shift_reg : std_logic_vector(DAC_NUM_BITS-1 downto 0) := X"00000";
+	signal right_lowmid_shift_reg : std_logic_vector(DAC_NUM_BITS-1 downto 0) := X"00000";
+	signal right_uppermid_shift_reg : std_logic_vector(DAC_NUM_BITS-1 downto 0) := X"00000";
+	signal right_woofer_shift_reg : std_logic_vector(DAC_NUM_BITS-1 downto 0) := X"00000";
 	
 	signal volume_left_woofer_16m : std_logic_vector(8 downto 0) := "000000000";
 	signal volume_left_lowmid_16m : std_logic_vector(8 downto 0) := "000000000";
@@ -361,27 +377,59 @@ begin
 	-- Loading clock profile for audioclk:
 	-- Number of states for bitclk, lrclk, and how many
 	-- extra MSB bits to shift at the start
-	process(audioclk)
+	process(audioclk_slow)
 	begin
-		if rising_edge(audioclk) then
+		if rising_edge(audioclk_slow) then
 		
 			if audioclk_count = 0 and cmd_freq_select /= last_freq_select then
+				
 				last_freq_select <= cmd_freq_select;
-				if cmd_freq_select = "01" then
+				
+				-- 28 MHz Clock
+				if cmd_freq_select = "101" then
 					dac_clk_max <= MAXCOUNT_28M_44;
 					dac_clk_lrclk <= LRCLK_28M_44;
 					dac_clk_bitclk <= BITCLK_28M_44;
 					dac_clk_msb <= MSBCOUNT_28M_44;
-				elsif cmd_freq_select = "10" then
+					output_bitclk_msb <= OUTPUT_BITCLK_BEFORE_MSB;
+				elsif cmd_freq_select = "110" then
 					dac_clk_max <= MAXCOUNT_28M_48;
 					dac_clk_lrclk <= LRCLK_28M_48;
 					dac_clk_bitclk <= BITCLK_28M_48;
 					dac_clk_msb <= MSBCOUNT_28M_48;
+					output_bitclk_msb <= OUTPUT_BITCLK_BEFORE_MSB;
+				
+				-- 16 MHz Clock
+				elsif cmd_freq_select = "001" then
+					dac_clk_max <= MAXCOUNT_16M;
+					dac_clk_lrclk <= LRCLK_16M;
+					dac_clk_bitclk <= BITCLK_16M;
+					dac_clk_msb <= MSBCOUNT_16M;
+					output_bitclk_msb <= ZERO_BITCLK_BEFORE_MSB;
+				elsif cmd_freq_select = "010" then
+					dac_clk_max <= MAXCOUNT_16M;
+					dac_clk_lrclk <= LRCLK_16M;
+					dac_clk_bitclk <= BITCLK_16M_FAST;
+					dac_clk_msb <= MSBCOUNT_16M_EARLY;
+					output_bitclk_msb <= ZERO_BITCLK_BEFORE_MSB;
+				elsif cmd_freq_select = "011" then
+					dac_clk_max <= MAXCOUNT_16M;
+					dac_clk_lrclk <= LRCLK_16M;
+					dac_clk_bitclk <= BITCLK_16M_FAST;
+					dac_clk_msb <= MSBCOUNT_16M_MID;
+					output_bitclk_msb <= ZERO_BITCLK_BEFORE_MSB;
+				elsif cmd_freq_select = "100" then
+					dac_clk_max <= MAXCOUNT_16M;
+					dac_clk_lrclk <= LRCLK_16M;
+					dac_clk_bitclk <= BITCLK_16M_FAST;
+					dac_clk_msb <= MSBCOUNT_16M_LATE;
+					output_bitclk_msb <= ZERO_BITCLK_BEFORE_MSB;
 				else
 					dac_clk_max <= MAXCOUNT_16M;
 					dac_clk_lrclk <= LRCLK_16M;
 					dac_clk_bitclk <= BITCLK_16M;
 					dac_clk_msb <= MSBCOUNT_16M;
+					output_bitclk_msb <= OUTPUT_BITCLK_BEFORE_MSB;
 				end if;
 			end if;
 		
@@ -390,8 +438,7 @@ begin
 	
 	
 	
-	
-	bitclk_o <= bitclk_i;
+	bitclk_o <= bitclk_i when ((output_bitclk_msb = OUTPUT_BITCLK_BEFORE_MSB or msb_count = dac_clk_msb) and data_shift_count /= DAC_NUM_BITS) else '0';
 	lrclk_o <= lrclk_i;
 	
 	dac_left_tweeter_o <= left_tweeter_shift_reg(19);
@@ -451,6 +498,10 @@ begin
 						left_tweeter_shift_reg(19 downto 0) <= left_tweeter_shift_reg(18 downto 0) & "0";
 						right_tweeter_shift_reg(19 downto 0) <= right_tweeter_shift_reg(18 downto 0) & "0";
 						
+						if data_shift_count /= DAC_NUM_BITS then
+							data_shift_count <= data_shift_count + 1;
+						end if;
+						
 					else
 						
 						msb_count <= msb_count + 1;
@@ -469,6 +520,7 @@ begin
 				bitclk_count <= (others => '0');
 				audioclk_count <= (others => '0');
 				msb_count <= (others => '0');
+				data_shift_count <= (others => '0');
 				bitclk_i <= '0';
 				sram_read_reset_sync <= sram_read_reset_o;
 			else

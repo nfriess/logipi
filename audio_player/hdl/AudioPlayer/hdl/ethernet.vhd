@@ -42,7 +42,7 @@ entity ethernet is
 				cmd_pause : out STD_LOGIC;
 				cmd_reset_dac : out STD_LOGIC;
 				cmd_user_sig : out STD_LOGIC;
-				cmd_freq_select : out STD_LOGIC_VECTOR(1 downto 0);
+				cmd_freq_select : out STD_LOGIC_VECTOR(2 downto 0);
 				
 				volume_left_woofer_o : out STD_LOGIC_VECTOR(8 downto 0);
 				volume_left_lowmid_o : out STD_LOGIC_VECTOR(8 downto 0);
@@ -437,7 +437,7 @@ begin
 	
 	cmd_mute <= audio_cmd(0);
 	cmd_pause <= audio_cmd(2);
-	cmd_freq_select <= audio_cmd(7 downto 6);
+	cmd_freq_select <= audio_cmd(7 downto 5);
 	
 	sdram_address <= "00000000" & sdram_write_ptr;
 	sdram_complete_address <= "00000000" & sdram_complete_ptr;

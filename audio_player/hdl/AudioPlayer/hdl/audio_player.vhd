@@ -191,7 +191,7 @@ architecture Behavioral of audio_player is
 	signal dbg_eth_state, dbg_dac_state, dbg_sdram_bus_state : std_logic_vector(15 downto 0);
 	signal dbg_sram_read_addr, dbg_sram_write_addr : std_logic_vector(15 downto 0);
 	signal dbg_eth_next_sequence, dbg_ip_ident, dbg_ip_frag_offset, dbg_spi_readdata : std_logic_vector(15 downto 0);
-	signal cmd_freq_select : std_logic_vector(1 downto 0);
+	signal cmd_freq_select : std_logic_vector(2 downto 0);
 begin
 
 sys_reset <= NOT PB(0); 

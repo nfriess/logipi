@@ -21,8 +21,11 @@ TIMESPEC TS_PER_CLK16 = PERIOD "clk16_grp" 59.0 ns;
 NET "PMOD1<7>" CLOCK_DEDICATED_ROUTE = FALSE;
 
 
+NET OSC_FPGA TNM_NET = FFS clk50_ffs_grp;
+NET PMOD1<7> TNM_NET = FFS clk16_ffs_grp;
 
-TIMESPEC TS_01=FROM clk50_grp TO clk16_grp TIG;
+TIMESPEC TS_01=FROM clk50_ffs_grp TO clk16_ffs_grp TIG;
+TIMESPEC TS_02=FROM clk16_ffs_grp TO clk50_ffs_grp TIG;
 
 
 ##############################################################################
