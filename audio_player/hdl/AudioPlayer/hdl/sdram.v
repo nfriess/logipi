@@ -33,7 +33,7 @@ module sdram
 // Params
 //-----------------------------------------------------------------
 #(
-    parameter    SDRAM_MHZ             = 100, // 50 or 100 mhz
+    parameter    SDRAM_MHZ             = 85, // 50 or 100 mhz
     parameter    SDRAM_ADDR_W          = 25,
     parameter    SDRAM_COL_W           = 9,    
     parameter    SDRAM_BANK_W          = 2,

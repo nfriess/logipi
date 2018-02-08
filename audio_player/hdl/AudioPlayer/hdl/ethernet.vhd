@@ -287,8 +287,8 @@ architecture Behavioral of ethernet is
 	
 	-- A counter to transmit a status broadcast packet every 10ms
 	signal ten_hz_counter  : std_logic_vector(23 downto 0) := X"000000";
-	-- 100mhz is 10ns, so we need to count to 1,000,000 to get 10ms
-	constant TEN_HZ_PERIOD : std_logic_vector(23 downto 0) := X"989680";
+	-- 85mhz is 11.7647ns, so we need to count to 8,500,000 to get 100ms
+	constant TEN_HZ_PERIOD : std_logic_vector(23 downto 0) := X"81B320";
 	
 	-- When the SDRAM is empty (the audio system is idle), only transmit every 1s
 	signal one_hz_counter  : std_logic_vector(23 downto 0) := X"000000";

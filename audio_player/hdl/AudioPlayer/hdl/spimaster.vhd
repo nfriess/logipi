@@ -70,7 +70,7 @@ begin
 	
 	clk_reset <= sys_reset OR clk_count_reset;
 	
-	-- spi_clk is 100mhz /8 = 12mhz
+	-- spi_clk is 85mhz / 7 = 12.1mhz
 	process(sys_clk,clk_reset)
 	begin
 	
@@ -80,6 +80,9 @@ begin
 		elsif rising_edge(sys_clk) then
 		
 			clk_count <= clk_count + 1;
+			if clk_count = "10" then
+				clk_count <= "00";
+			end if;
 			
 			if clk_count = "00" then
 				spi_clk_internal <= not spi_clk_internal;
