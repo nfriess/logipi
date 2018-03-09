@@ -7,7 +7,7 @@ independent clock domains.  The first is the state machine that reads
 data from the SDRAM and stores it in the SRAM.  The second is the
 state machine that reads data from the SRAM and drives the 8 D-to-As.
 
-Because there are two different clock domains (100MHz and 16.9MHz),
+Because there are two different clock domains (85MHz and 16.9MHz),
 there are also many signals that need to be synchronized between them.
 Currently some signals do not pass the Xilinx timing analysis, but
 the state machines work in practice.
@@ -20,7 +20,7 @@ no data is read from the SRAM when it is empty.
 
 ## Reading SDRAM
 
-This state machine operates in the 100MHz clock domain, along with
+This state machine operates in the 85MHz clock domain, along with
 the Ethernet controller and SDRAM controller.  This allows it to
 read data as fast as possible from the SDRAM to keep the SRAM buffer
 full.
@@ -79,6 +79,11 @@ goes to the left woofer D-to-A, so that the signals are not sent
 to the wrong speakers.  (Sending loud low frequency signals to
 a tweeter may ruin it!)
 
+NOTE: This frame synchronization currently doesn't work because of
+the possibility of changing clocks.  What needs to happen is that
+when we jump backwards with audioclk_count, the counters for bitclk
+and lrclk need to jump backwards as well.
+
 
 ## Reading SRAM and generating D-to-A signals
 
@@ -94,17 +99,33 @@ speakers.  The state machine starts in a partial reset state and
 will be placed in this state if the SRAM buffer is emptied or
 the PC host sends a command to stop playback (DAC RESET).
 
-Otherwise, most of the complexity here is in generating the read
-signals to the SRAM at the right times, capturing the data in
-shift registers, and shifting the data out to the D-to-As.  All
-of this happens in phase with the generated Latch Enable which is
-why this state machine generates all of these signals at once.
+Otherwise, the basic process is to read a sample from the SRAM,
+pass it into the volume multiplier, read it out after 6 clock
+cycles, and load the adjusted sample into a shift register,
+and clock the shift register out to the D-to-As.  This happens
+for all 8 channels. All of this happens in phase with the generated
+latch enable which is why this state machine generates all of these
+signals in one process.
 
 This is also the point where the 24-bit audio data from the PC
 host, which was stored in 32-bit words in SDRAM and SRAM, is now
 truncated to 20 bits.  The 8 bits in SDRAM and lower 4 bits of
 the 24-bit sample are discareded.
 
-It should be noted that the basic structure of this state machine
-was borrowed from my friend's previous VHDL implementation with
-the USB device.
+The other important work being done here is to generate bit clock
+and latch enable based on the selection sent from the PC.  There
+can be up to 8 different timings configured in the VHDL.  This
+allows for switching between different audio clocks, like 16.9MHz
+vs 28.2MHz clocks, adjusting left/right justification of the data,
+or (in the case of a 28.2MHz clock) adjusting the divider count
+to support 44.1KHz and 48KHz sample rates without any manual
+intervention.
+
+Finally, the registers holding the current volume for each channel
+are also adjusted as part of the this state machine.  When the data
+should be muted, the current volume actually ramps down using a shift
+right operation at the current sample rate (ie, 44.1KHz).  If the
+volume is turned up or down (or going from mute to unmute), then the
+volume is adjusted +/- 1 step at the sample rate.  This avoids
+creating high frequency noise and popping sounds at the beginning and
+end of playback.
