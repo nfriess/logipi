@@ -1,0 +1,9 @@
+(module DUMMY (layer F.Cu) (tedit 0)
+  (descr "<h3>Dummy Footprint</h3>\n<p>NOTHING HERE!!! For when you want a symbol with no package.</p>")
+  (fp_text reference FRAME3 (at 0 0) (layer F.SilkS) hide
+    (effects (font (size 1.27 1.27) (thickness 0.15)))
+  )
+  (fp_text value FRAME-LETTERSIZENO_PACKAGE (at 0 0) (layer F.SilkS) hide
+    (effects (font (size 1.27 1.27) (thickness 0.15)))
+  )
+)
