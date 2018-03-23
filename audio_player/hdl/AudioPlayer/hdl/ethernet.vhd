@@ -247,7 +247,9 @@ architecture Behavioral of ethernet is
 		DHCP_REQUEST_DHCP_CHADDR_3, DHCP_REQUEST_DHCP_CHADDR_4, DHCP_REQUEST_DHCP_SNAME_FILE,
 		DHCP_REQUEST_DHCP_COOKIE, DHCP_REQUEST_DHCP_OPT_1, DHCP_REQUEST_DHCP_OPT_2,
 		DHCP_REQUEST_DHCP_OPT_3, DHCP_REQUEST_DHCP_OPT_4,
-		DHCP_REQUEST_SET_TXST, DHCP_REQUEST_SET_TXLEN, DHCP_REQUEST_DO_TXRTS
+		DHCP_REQUEST_SET_TXST, DHCP_REQUEST_SET_TXLEN, DHCP_REQUEST_DO_TXRTS,
+		
+		DAC_RESET_START, DAC_RESET_DONE
 		
 		);
 	
@@ -1807,14 +1809,6 @@ begin
 					audio_tmp_sequence <= spi_readdata;
 				end if;
 				
-				cmd_reset_dac <= '0';
-				
-				if audio_cmd(8) = '1' then
-					cmd_reset_dac <= '1';
-					sdram_write_ptr <= (others => '0');
-					sdram_complete_ptr <= (others => '0');
-				end if;
-				
 				if audio_cmd(16) = '1' then
 					cmd_user_sig <= '0';
 				elsif audio_cmd(17) = '1' then
@@ -1852,13 +1846,20 @@ begin
 					next_state <= RX_AUDIO_DATA_SAVE;
 					state <= STARTSPI;
 					
+				elsif audio_cmd(8) = '1' then
+					
+					ip_next_frag_offset <= (others => '0'); -- Force next fragment to be 0
+					spi_cycle <= '0'; -- Since auto_disable was 0 in prev state
+					state <= DAC_RESET_START;
+					
 				else
 					
 					ip_next_frag_offset <= (others => '0'); -- Force next fragment to be 0
 					spi_cycle <= '0'; -- Since auto_disable was 0 in prev state
 					state <= RX_SET_ERXTAIL;
 				end if;
-			
+				
+				
 			when RX_AUDIO_DATA_SAVE =>
 				-- Set SDRAM data
 				
@@ -3586,6 +3587,25 @@ begin
 				state <= STARTSPI;
 				
 				
+				
+				
+			when DAC_RESET_START =>
+				-- Wait at least 25 us for DAC state machine to fully reset
+				
+				cmd_reset_dac <= '1';
+				sdram_write_ptr <= (others => '0');
+				sdram_complete_ptr <= (others => '0');
+				
+				-- With a 10ns clock need 2,500 = 9C4, but we round up a bit
+				counter <= (others => '0');
+				counter_stop_wait <= X"09CF";
+				next_state <= DAC_RESET_DONE;
+				state <= WAITCOUNT;
+				
+			when DAC_RESET_DONE =>
+				
+				cmd_reset_dac <= '0';
+				state <= RX_SET_ERXTAIL;
 				
 				
 				
