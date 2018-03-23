@@ -63,12 +63,16 @@ Command bits:
 * Bit 31 (MSB): If this is set then no audio data will be contained in the
   packet.  In other words, the packet is a command and sequence number only.
 
+* Bit 30: If this is set then the packet contains volume controls only.
+
 * Bit 17: Set the user signal to logic one (on).  This can be used to turn
   on a relay that controls the power input for the amplifiers.
 
 * Bit 16: Set the user signal to logic zero (off).
 
 * Bit 8: Force a reset of the D-to-A state machine.
+
+* Bit 7-5: Select clock type and sample rate.
 
 * Bit 2: Pause the D-to-A state machine.  All of the audio data currently
   buffered will remain as-is and the state machine will continue running
@@ -208,3 +212,21 @@ due to Ethernet errors.  UDP datagrams have a 16-bit checksum that can
 be used but the device does not check this and the device does not
 generate a checksum when transmitting status packets.  This could be
 improved in the future.
+
+## Special packet modes
+
+### Setting volume controls
+
+The volume controls are sent like a data packet to UDP port 9000.  The
+command bitmask should have bit 30 set.  The sequence number is ignored.
+The data that follows is 8 16-bit words for the volume of each channel.
+The maximum value is 0x0100 and the minimum volume is 0x000.  The order
+of the channels is:
+# Left Woofer
+# Right Woofer
+# Left Low Midrange
+# Right Low Midrange
+# Left High Midrange
+# Right High Midrange
+# Left Tweeter
+# Right Tweeter

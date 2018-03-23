@@ -1,0 +1,1474 @@
+EESchema Schematic File Version 4
+EELAYER 26 0
+EELAYER END
+$Descr User 11820 8943
+encoding utf-8
+Sheet 2 3
+Title ""
+Date ""
+Rev ""
+Comp ""
+Comment1 ""
+Comment2 ""
+Comment3 ""
+Comment4 ""
+$EndDescr
+Connection ~ 2300 5600
+Connection ~ 2600 5600
+Text Label 2600 5650 0    70   ~ 0
+2_RAW_+12V
+Connection ~ 3700 5600
+Wire Wire Line
+	1700 5200 1700 5600
+Wire Wire Line
+	1700 5600 2300 5600
+Wire Wire Line
+	2300 5600 2300 5200
+Wire Wire Line
+	2300 5600 2600 5600
+Wire Wire Line
+	2600 5600 3700 5600
+Wire Wire Line
+	3700 5600 3800 5600
+Wire Wire Line
+	2600 5700 2600 5600
+Wire Wire Line
+	3900 6000 3700 6000
+Wire Wire Line
+	3700 6000 3700 5600
+Connection ~ 2600 6600
+Text Label 2100 6600 0    70   ~ 0
+2_RAW_0V
+Connection ~ 1600 5700
+Connection ~ 3700 6600
+Wire Wire Line
+	1700 5100 1600 5100
+Wire Wire Line
+	1600 5100 1600 5700
+Wire Wire Line
+	1600 5700 1600 6600
+Wire Wire Line
+	1600 6600 2600 6600
+Wire Wire Line
+	2400 5700 2400 5100
+Wire Wire Line
+	2400 5100 2300 5100
+Wire Wire Line
+	2600 6600 3700 6600
+Wire Wire Line
+	3700 6600 3800 6600
+Wire Wire Line
+	2600 6500 2600 6600
+Wire Wire Line
+	2400 5700 1600 5700
+Wire Wire Line
+	3900 6300 3700 6300
+Wire Wire Line
+	3700 6300 3700 6600
+Wire Wire Line
+	2600 4400 2600 4500
+Wire Wire Line
+	2600 6100 2600 6200
+Connection ~ 5900 900 
+Connection ~ 5900 1000
+Connection ~ 5900 1100
+Connection ~ 5500 900 
+Connection ~ 5200 900 
+Connection ~ 4800 900 
+Wire Wire Line
+	5100 900  5200 900 
+Wire Wire Line
+	5200 900  5500 900 
+Wire Wire Line
+	5500 900  5900 900 
+Wire Wire Line
+	5900 900  5900 1000
+Wire Wire Line
+	5900 1000 5900 1100
+Wire Wire Line
+	5900 1100 5800 1100
+Wire Wire Line
+	5800 1100 5800 1600
+Wire Wire Line
+	5800 1600 8000 1600
+Wire Wire Line
+	8000 1600 8000 1400
+Wire Wire Line
+	5500 1200 5500 900 
+Wire Wire Line
+	5200 1200 5200 900 
+Wire Wire Line
+	4700 900  4800 900 
+Wire Wire Line
+	4800 900  5200 900 
+Wire Wire Line
+	4600 1300 4800 1300
+Wire Wire Line
+	4800 1300 4800 900 
+Connection ~ 5700 5600
+Connection ~ 5700 5700
+Connection ~ 5700 5800
+Connection ~ 4800 5600
+Connection ~ 5300 5600
+Connection ~ 4400 5600
+Wire Wire Line
+	4400 5600 4800 5600
+Wire Wire Line
+	4800 5600 5300 5600
+Wire Wire Line
+	5300 5600 5700 5600
+Wire Wire Line
+	5700 5600 5700 5700
+Wire Wire Line
+	5700 5700 5700 5800
+Wire Wire Line
+	5700 5800 5600 5800
+Wire Wire Line
+	5600 5800 5600 6300
+Wire Wire Line
+	5600 6300 7800 6300
+Wire Wire Line
+	7800 6300 7800 6100
+Wire Wire Line
+	4800 5600 4800 5900
+Wire Wire Line
+	5300 5900 5300 5600
+Wire Wire Line
+	4400 5600 4400 6000
+Wire Wire Line
+	4400 6000 4300 6000
+Connection ~ 5700 3900
+Connection ~ 5700 4000
+Connection ~ 5700 4100
+Connection ~ 5300 3900
+Connection ~ 4800 3900
+Connection ~ 4400 3900
+Wire Wire Line
+	4800 3900 5300 3900
+Wire Wire Line
+	5300 3900 5700 3900
+Wire Wire Line
+	5700 3900 5700 4000
+Wire Wire Line
+	5700 4000 5700 4100
+Wire Wire Line
+	5700 4100 5600 4100
+Wire Wire Line
+	5600 4100 5600 4600
+Wire Wire Line
+	5600 4600 7800 4600
+Wire Wire Line
+	7800 4600 7800 4400
+Wire Wire Line
+	5300 4200 5300 3900
+Wire Wire Line
+	4800 4200 4800 3900
+Wire Wire Line
+	4400 3900 4800 3900
+Wire Wire Line
+	4300 4300 4400 4300
+Wire Wire Line
+	4400 4300 4400 3900
+Connection ~ 8100 1300
+Wire Wire Line
+	8000 1300 8100 1300
+Wire Wire Line
+	8100 1300 8100 1400
+Wire Wire Line
+	8100 1300 8400 1300
+Wire Wire Line
+	8400 1300 8400 1500
+Connection ~ 8800 1200
+Connection ~ 8100 1900
+Connection ~ 8400 1900
+Connection ~ 5900 1900
+Connection ~ 5500 1900
+Connection ~ 8800 1900
+Connection ~ 9000 1900
+Text GLabel 10420 1900 2    70   BiDi ~ 0
+0V_RECV
+Connection ~ 5200 1900
+Connection ~ 4800 1900
+Connection ~ 9800 1900
+Wire Wire Line
+	5200 1900 5500 1900
+Wire Wire Line
+	5500 1900 5900 1900
+Wire Wire Line
+	5900 1900 8100 1900
+Wire Wire Line
+	8100 1900 8400 1900
+Wire Wire Line
+	8400 1900 8800 1900
+Wire Wire Line
+	8800 1900 8800 1200
+Wire Wire Line
+	8800 1200 8000 1200
+Wire Wire Line
+	8800 1200 8800 800 
+Wire Wire Line
+	8800 800  8000 800 
+Wire Wire Line
+	8100 1800 8100 1900
+Wire Wire Line
+	8400 1800 8400 1900
+Wire Wire Line
+	5900 1300 5900 1900
+Wire Wire Line
+	5200 1500 5200 1900
+Wire Wire Line
+	5500 1500 5500 1900
+Wire Wire Line
+	9000 1600 9000 1900
+Wire Wire Line
+	9000 1900 8800 1900
+Wire Wire Line
+	9000 1900 9300 1900
+Wire Wire Line
+	9800 1900 10420 1900
+Wire Wire Line
+	4700 1900 4800 1900
+Wire Wire Line
+	4800 1900 5200 1900
+Wire Wire Line
+	4600 1700 4800 1700
+Wire Wire Line
+	4800 1700 4800 1900
+Connection ~ 8000 1000
+Connection ~ 9000 1000
+Text GLabel 10270 1000 2    70   BiDi ~ 0
++3.3V_RECV
+Connection ~ 9800 1000
+Wire Wire Line
+	8000 1000 9000 1000
+Wire Wire Line
+	9000 1000 9000 1300
+Wire Wire Line
+	8000 1100 8000 1000
+Wire Wire Line
+	9000 1000 9300 1000
+Wire Wire Line
+	9800 1000 10270 1000
+Connection ~ 8000 4300
+Wire Wire Line
+	7800 4300 8000 4300
+Wire Wire Line
+	8000 4300 8300 4300
+Wire Wire Line
+	8300 4300 8300 4500
+Wire Wire Line
+	8000 4300 8000 4400
+Connection ~ 7800 4000
+Connection ~ 9000 4000
+Text GLabel 10300 4000 2    70   BiDi ~ 0
++8.2V_DAC
+Connection ~ 9800 4000
+Wire Wire Line
+	7800 4100 7800 4000
+Wire Wire Line
+	7800 4000 9000 4000
+Wire Wire Line
+	9000 4000 9000 4300
+Wire Wire Line
+	9000 4000 9800 4000
+Wire Wire Line
+	9800 4000 10300 4000
+Wire Wire Line
+	9800 4100 9800 4000
+Connection ~ 8000 6000
+Wire Wire Line
+	7800 6000 8000 6000
+Wire Wire Line
+	8000 6000 8000 6100
+Wire Wire Line
+	8000 6000 8300 6000
+Wire Wire Line
+	8300 6000 8300 6200
+Connection ~ 8000 6600
+Connection ~ 8300 6600
+Connection ~ 4800 6600
+Connection ~ 5300 6600
+Connection ~ 8700 5900
+Connection ~ 8700 6600
+Connection ~ 9000 6600
+Connection ~ 5700 6600
+Text GLabel 10300 6600 2    70   BiDi ~ 0
+-8.2V_DAC
+Connection ~ 4400 6600
+Connection ~ 9800 6600
+Wire Wire Line
+	4400 6600 4800 6600
+Wire Wire Line
+	4800 6600 5300 6600
+Wire Wire Line
+	5300 6600 5700 6600
+Wire Wire Line
+	5700 6600 8000 6600
+Wire Wire Line
+	8000 6600 8000 6500
+Wire Wire Line
+	8000 6600 8300 6600
+Wire Wire Line
+	8300 6600 8300 6500
+Wire Wire Line
+	7800 5900 8700 5900
+Wire Wire Line
+	8700 5900 8700 6600
+Wire Wire Line
+	8700 6600 8300 6600
+Wire Wire Line
+	4800 6200 4800 6600
+Wire Wire Line
+	5300 6200 5300 6600
+Wire Wire Line
+	7800 5500 8700 5500
+Wire Wire Line
+	8700 5500 8700 5900
+Wire Wire Line
+	8700 6600 9000 6600
+Wire Wire Line
+	9000 6600 9000 6300
+Wire Wire Line
+	9000 6600 9800 6600
+Wire Wire Line
+	9800 6600 10300 6600
+Wire Wire Line
+	5700 6000 5700 6600
+Wire Wire Line
+	4300 6300 4400 6300
+Wire Wire Line
+	4400 6300 4400 6600
+Wire Wire Line
+	9800 6400 9800 6600
+Connection ~ 8700 4200
+Connection ~ 5700 4900
+Connection ~ 5300 4900
+Connection ~ 4800 4900
+Connection ~ 8300 4900
+Connection ~ 8000 4900
+Connection ~ 8700 4900
+Connection ~ 7800 5700
+Connection ~ 9000 4900
+Connection ~ 9000 5700
+Connection ~ 9000 5300
+Text GLabel 10320 5300 2    70   BiDi ~ 0
+DGND_DAC
+Connection ~ 4400 4900
+Connection ~ 9800 5300
+Wire Wire Line
+	7800 3800 8700 3800
+Wire Wire Line
+	8700 3800 8700 4200
+Wire Wire Line
+	8700 4200 8700 4900
+Wire Wire Line
+	8700 4900 8300 4900
+Wire Wire Line
+	8300 4900 8000 4900
+Wire Wire Line
+	8000 4900 5700 4900
+Wire Wire Line
+	5700 4900 5300 4900
+Wire Wire Line
+	5300 4900 4800 4900
+Wire Wire Line
+	4800 4900 4400 4900
+Wire Wire Line
+	7800 4200 8700 4200
+Wire Wire Line
+	5700 4300 5700 4900
+Wire Wire Line
+	5300 4500 5300 4900
+Wire Wire Line
+	4800 4500 4800 4900
+Wire Wire Line
+	8300 4800 8300 4900
+Wire Wire Line
+	8000 4800 8000 4900
+Wire Wire Line
+	9000 4600 9000 4900
+Wire Wire Line
+	9000 4900 8700 4900
+Wire Wire Line
+	7800 5800 7800 5700
+Wire Wire Line
+	7800 5700 9000 5700
+Wire Wire Line
+	9000 5700 9000 6000
+Wire Wire Line
+	9000 4900 9000 5300
+Wire Wire Line
+	9000 5300 9000 5700
+Wire Wire Line
+	9000 5300 9800 5300
+Wire Wire Line
+	9800 5300 10320 5300
+Wire Wire Line
+	4300 4700 4400 4700
+Wire Wire Line
+	4400 4700 4400 4900
+Wire Wire Line
+	9800 5000 9800 5300
+Wire Wire Line
+	9800 5300 9800 5500
+Text GLabel 10480 3400 2    70   BiDi ~ 0
+0V_ISO
+Connection ~ 8800 2700
+Connection ~ 8100 3400
+Connection ~ 8400 3400
+Connection ~ 5900 3400
+Connection ~ 5500 3400
+Connection ~ 8800 3400
+Connection ~ 9000 3400
+Connection ~ 5200 3400
+Connection ~ 4800 3400
+Connection ~ 9800 3400
+Wire Wire Line
+	9800 3400 10480 3400
+Wire Wire Line
+	5200 3400 5500 3400
+Wire Wire Line
+	5500 3400 5900 3400
+Wire Wire Line
+	5900 3400 8100 3400
+Wire Wire Line
+	8100 3400 8400 3400
+Wire Wire Line
+	8400 3400 8800 3400
+Wire Wire Line
+	8800 3400 8800 2700
+Wire Wire Line
+	8800 2700 8000 2700
+Wire Wire Line
+	8800 2700 8800 2300
+Wire Wire Line
+	8800 2300 8000 2300
+Wire Wire Line
+	8100 3300 8100 3400
+Wire Wire Line
+	8400 3300 8400 3400
+Wire Wire Line
+	5900 2800 5900 3400
+Wire Wire Line
+	5200 3000 5200 3400
+Wire Wire Line
+	5500 3000 5500 3400
+Wire Wire Line
+	9000 3100 9000 3400
+Wire Wire Line
+	9000 3400 8800 3400
+Wire Wire Line
+	9000 3400 9350 3400
+Wire Wire Line
+	4700 3400 4800 3400
+Wire Wire Line
+	4800 3400 5200 3400
+Wire Wire Line
+	4600 3200 4800 3200
+Wire Wire Line
+	4800 3200 4800 3400
+Text GLabel 10320 2500 2    70   BiDi ~ 0
++3.3V_ISO
+Connection ~ 8000 2500
+Connection ~ 9000 2500
+Connection ~ 9800 2500
+Wire Wire Line
+	9800 2500 10320 2500
+Wire Wire Line
+	8000 2500 9000 2500
+Wire Wire Line
+	9000 2500 9000 2800
+Wire Wire Line
+	8000 2600 8000 2500
+Wire Wire Line
+	9000 2500 9300 2500
+Wire Wire Line
+	9800 2900 9800 3100
+Wire Wire Line
+	9800 4500 9800 4700
+Wire Wire Line
+	9800 1600 9800 1400
+Wire Wire Line
+	9800 5800 9800 6000
+Connection ~ 4000 900 
+Text GLabel 2300 900  0    70   BiDi ~ 0
+5V_RAW_RECV
+Connection ~ 2900 900 
+Wire Wire Line
+	4100 900  4000 900 
+Wire Wire Line
+	4200 1300 4000 1300
+Wire Wire Line
+	4000 1300 4000 900 
+Wire Wire Line
+	4000 900  2900 900 
+Wire Wire Line
+	2900 900  2300 900 
+Wire Wire Line
+	2900 1000 2900 900 
+Connection ~ 4000 1900
+Text GLabel 2300 1900 0    70   BiDi ~ 0
+0V_RAW_RECV
+Connection ~ 2900 1900
+Wire Wire Line
+	4100 1900 4000 1900
+Wire Wire Line
+	4200 1700 4000 1700
+Wire Wire Line
+	4000 1700 4000 1900
+Wire Wire Line
+	4000 1900 2900 1900
+Wire Wire Line
+	2900 1900 2300 1900
+Wire Wire Line
+	2900 1600 2900 1400
+Connection ~ 5900 2400
+Connection ~ 5900 2500
+Connection ~ 5900 2600
+Connection ~ 5500 2400
+Connection ~ 5200 2400
+Connection ~ 4800 2400
+Wire Wire Line
+	5100 2400 5200 2400
+Wire Wire Line
+	5200 2400 5500 2400
+Wire Wire Line
+	5500 2400 5900 2400
+Wire Wire Line
+	5900 2400 5900 2500
+Wire Wire Line
+	5900 2500 5900 2600
+Wire Wire Line
+	5900 2600 5800 2600
+Wire Wire Line
+	5800 2600 5800 3100
+Wire Wire Line
+	5800 3100 8000 3100
+Wire Wire Line
+	8000 3100 8000 2900
+Wire Wire Line
+	5500 2700 5500 2400
+Wire Wire Line
+	5200 2700 5200 2400
+Wire Wire Line
+	4700 2400 4800 2400
+Wire Wire Line
+	4800 2400 5200 2400
+Wire Wire Line
+	4600 2800 4800 2800
+Wire Wire Line
+	4800 2800 4800 2400
+Connection ~ 8100 2800
+Wire Wire Line
+	8000 2800 8100 2800
+Wire Wire Line
+	8100 2800 8100 2900
+Wire Wire Line
+	8100 2800 8400 2800
+Wire Wire Line
+	8400 2800 8400 3000
+Connection ~ 2300 4900
+Connection ~ 2600 4900
+Text Label 3000 4900 0    70   ~ 0
+1_RAW_0V
+Connection ~ 3700 4900
+Connection ~ 3400 4900
+Connection ~ 4000 3400
+Wire Wire Line
+	4100 3400 4000 3400
+Wire Wire Line
+	4200 3200 4000 3200
+Wire Wire Line
+	4000 3200 4000 3400
+Wire Wire Line
+	1700 4800 1700 4400
+Wire Wire Line
+	1700 4400 2300 4400
+Wire Wire Line
+	2300 4400 2300 4900
+Wire Wire Line
+	2300 4900 2600 4900
+Wire Wire Line
+	2600 4900 3400 4900
+Wire Wire Line
+	3400 4900 3700 4900
+Wire Wire Line
+	3700 4900 3800 4900
+Wire Wire Line
+	2600 4800 2600 4900
+Wire Wire Line
+	3900 4700 3700 4700
+Wire Wire Line
+	3700 4700 3700 4900
+Wire Wire Line
+	3400 3400 3400 4900
+Wire Wire Line
+	4000 3400 3400 3400
+Connection ~ 4000 2400
+Text Label 1600 4100 0    70   ~ 0
+1_RAW_+12V
+Connection ~ 2600 3900
+Connection ~ 1600 4300
+Connection ~ 3700 3900
+Connection ~ 3100 3900
+Wire Wire Line
+	4100 2400 4000 2400
+Wire Wire Line
+	4200 2800 4000 2800
+Wire Wire Line
+	4000 2800 4000 2400
+Wire Wire Line
+	4000 2400 3100 2400
+Wire Wire Line
+	2600 3900 3100 3900
+Wire Wire Line
+	3100 3900 3700 3900
+Wire Wire Line
+	3700 3900 3800 3900
+Wire Wire Line
+	2600 4000 2600 3900
+Wire Wire Line
+	2400 5000 2300 5000
+Wire Wire Line
+	2400 4300 2400 5000
+Wire Wire Line
+	1600 3900 2600 3900
+Wire Wire Line
+	1700 4900 1600 4900
+Wire Wire Line
+	1600 4900 1600 4300
+Wire Wire Line
+	1600 4300 1600 3900
+Wire Wire Line
+	2400 4300 1600 4300
+Wire Wire Line
+	3900 4300 3700 4300
+Wire Wire Line
+	3700 4300 3700 3900
+Wire Wire Line
+	3100 2400 3100 3900
+$Comp
+L Copper~Receiver~Module-eagle-import:F09V X1
+U 1 0 A7D9E5F3
+P 2000 5000
+AR Path="/A7D9E5F3" Ref="X1"  Part="1" 
+AR Path="/5A65636B/A7D9E5F3" Ref="X1"  Part="1" 
+F 0 "X1" H 1850 5350 59  0000 L BNN
+F 1 "SubD9" H 1850 4575 59  0000 L BNN
+F 2 "CustomParts:SubD9_Larger" H 2000 5000 50  0001 C CNN
+F 3 "" H 2000 5000 50  0001 C CNN
+	1    2000 5000
+	1    0    0    -1  
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:R-US_R0603 R51
+U 1 0 7E6560A5
+P 2600 4200
+AR Path="/7E6560A5" Ref="R51"  Part="1" 
+AR Path="/5A65636B/7E6560A5" Ref="R51"  Part="1" 
+F 0 "R51" H 2450 4259 59  0000 L BNN
+F 1 "10R" H 2450 4070 59  0000 L BNN
+F 2 "Resistors_SMD:R_0603" H 2600 4200 50  0001 C CNN
+F 3 "" H 2600 4200 50  0001 C CNN
+F 4 "MCT0603-10.0-CFCT-ND" H 2600 4200 50  0001 C CNN "Vendor"
+	1    2600 4200
+	0    -1   -1   0   
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:R-US_R0603 R52
+U 1 0 077C05B2
+P 2600 5900
+AR Path="/077C05B2" Ref="R52"  Part="1" 
+AR Path="/5A65636B/077C05B2" Ref="R52"  Part="1" 
+F 0 "R52" H 2450 5959 59  0000 L BNN
+F 1 "10R" H 2450 5770 59  0000 L BNN
+F 2 "Resistors_SMD:R_0603" H 2600 5900 50  0001 C CNN
+F 3 "" H 2600 5900 50  0001 C CNN
+F 4 "MCT0603-10.0-CFCT-ND" H 2600 5900 50  0001 C CNN "Vendor"
+	1    2600 5900
+	0    -1   -1   0   
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:INDUCTOR_0805_N L82
+U 1 0 D5B4F51D
+P 4100 5600
+AR Path="/D5B4F51D" Ref="L82"  Part="1" 
+AR Path="/5A65636B/D5B4F51D" Ref="L82"  Part="1" 
+F 0 "L82" V 4050 5400 59  0000 L BNN
+F 1 "60/20/5" V 4250 5400 59  0000 L BNN
+F 2 "Copper Receiver Module:RESC0805_N" H 4100 5600 50  0001 C CNN
+F 3 "" H 4100 5600 50  0001 C CNN
+F 4 "MH2029-600YCT-ND" V 4100 5600 50  0001 C CNN "Vendor"
+	1    4100 5600
+	0    1    1    0   
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:INDUCTOR_0805_N L83
+U 1 0 C163B66C
+P 4100 6600
+AR Path="/C163B66C" Ref="L83"  Part="1" 
+AR Path="/5A65636B/C163B66C" Ref="L83"  Part="1" 
+F 0 "L83" V 4050 6400 59  0000 L BNN
+F 1 "60/20/5" V 4250 6400 59  0000 L BNN
+F 2 "Copper Receiver Module:RESC0805_N" H 4100 6600 50  0001 C CNN
+F 3 "" H 4100 6600 50  0001 C CNN
+F 4 "MH2029-600YCT-ND" V 4100 6600 50  0001 C CNN "Vendor"
+	1    4100 6600
+	0    1    1    0   
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:INDUCTOR_0805_N L80
+U 1 0 262728C8
+P 4100 3900
+AR Path="/262728C8" Ref="L80"  Part="1" 
+AR Path="/5A65636B/262728C8" Ref="L80"  Part="1" 
+F 0 "L80" V 4050 3700 59  0000 L BNN
+F 1 "60/20/5" V 4250 3700 59  0000 L BNN
+F 2 "Copper Receiver Module:RESC0805_N" H 4100 3900 50  0001 C CNN
+F 3 "" H 4100 3900 50  0001 C CNN
+F 4 "MH2029-600YCT-ND" V 4100 3900 50  0001 C CNN "Vendor"
+	1    4100 3900
+	0    1    1    0   
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:LT3042 IC1
+U 1 0 74E8A10A
+P 7000 1100
+AR Path="/74E8A10A" Ref="IC1"  Part="1" 
+AR Path="/5A65636B/74E8A10A" Ref="IC1"  Part="1" 
+F 0 "IC1" H 6700 1200 85  0000 L CNN
+F 1 "LT3042" H 6700 1000 85  0000 L CNN
+F 2 "Copper Receiver Module:MSOP-10_MSE" H 7000 1100 50  0001 C CNN
+F 3 "" H 7000 1100 50  0001 C CNN
+	1    7000 1100
+	1    0    0    -1  
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:LT3042 IC2
+U 1 0 EA2B0FB2
+P 6800 4100
+AR Path="/EA2B0FB2" Ref="IC2"  Part="1" 
+AR Path="/5A65636B/EA2B0FB2" Ref="IC2"  Part="1" 
+F 0 "IC2" H 6500 4200 85  0000 L CNN
+F 1 "LT3042" H 6500 4000 85  0000 L CNN
+F 2 "Copper Receiver Module:MSOP-10_MSE" H 6800 4100 50  0001 C CNN
+F 3 "" H 6800 4100 50  0001 C CNN
+	1    6800 4100
+	1    0    0    -1  
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:LT3042 IC3
+U 1 0 E099B069
+P 6800 5800
+AR Path="/E099B069" Ref="IC3"  Part="1" 
+AR Path="/5A65636B/E099B069" Ref="IC3"  Part="1" 
+F 0 "IC3" H 6500 5900 85  0000 L CNN
+F 1 "LT3042" H 6500 5700 85  0000 L CNN
+F 2 "Copper Receiver Module:MSOP-10_MSE" H 6800 5800 50  0001 C CNN
+F 3 "" H 6800 5800 50  0001 C CNN
+	1    6800 5800
+	1    0    0    -1  
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:R-US_R0603 R67
+U 1 0 BAF8779A
+P 8100 1600
+AR Path="/BAF8779A" Ref="R67"  Part="1" 
+AR Path="/5A65636B/BAF8779A" Ref="R67"  Part="1" 
+F 0 "R67" H 7950 1659 59  0000 L BNN
+F 1 "33K" H 7950 1470 59  0000 L BNN
+F 2 "Resistors_SMD:R_0603" H 8100 1600 50  0001 C CNN
+F 3 "" H 8100 1600 50  0001 C CNN
+F 4 "MCT0603-33.0K-CFCT-ND" H 8100 1600 50  0001 C CNN "Vendor"
+	1    8100 1600
+	0    -1   -1   0   
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:C-USC0603 C68
+U 1 0 8D1B90F3
+P 8400 1600
+AR Path="/8D1B90F3" Ref="C68"  Part="1" 
+AR Path="/5A65636B/8D1B90F3" Ref="C68"  Part="1" 
+F 0 "C68" H 8440 1625 59  0000 L BNN
+F 1 "470nF" H 8440 1435 59  0000 L BNN
+F 2 "Capacitors_SMD:C_0603" H 8400 1600 50  0001 C CNN
+F 3 "" H 8400 1600 50  0001 C CNN
+F 4 "490-3291-1-ND" H 8400 1600 50  0001 C CNN "Vendor"
+	1    8400 1600
+	1    0    0    -1  
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:C-USC1210 C70
+U 1 0 B1F40BE7
+P 5500 1300
+AR Path="/B1F40BE7" Ref="C70"  Part="1" 
+AR Path="/5A65636B/B1F40BE7" Ref="C70"  Part="1" 
+F 0 "C70" H 5540 1325 59  0000 L BNN
+F 1 "10uF" H 5540 1135 59  0000 L BNN
+F 2 "Capacitors_SMD:C_1210" H 5500 1300 50  0001 C CNN
+F 3 "" H 5500 1300 50  0001 C CNN
+F 4 "490-1867-1-ND" H 5500 1300 50  0001 C CNN "Vendor"
+	1    5500 1300
+	1    0    0    -1  
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:C-USC0805 C71
+U 1 0 01C3D8B3
+P 5200 1300
+AR Path="/01C3D8B3" Ref="C71"  Part="1" 
+AR Path="/5A65636B/01C3D8B3" Ref="C71"  Part="1" 
+F 0 "C71" H 5240 1325 59  0001 L BNN
+F 1 "47uF" H 5240 1135 59  0001 L BNN
+F 2 "Capacitors_SMD:C_0805" H 5200 1300 50  0001 C CNN
+F 3 "" H 5200 1300 50  0001 C CNN
+F 4 "511-1682-1-ND" H 5200 1300 50  0001 C CNN "Vendor"
+	1    5200 1300
+	1    0    0    -1  
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:INDUCTOR_0805_N L81
+U 1 0 9A735A00
+P 4100 4900
+AR Path="/9A735A00" Ref="L81"  Part="1" 
+AR Path="/5A65636B/9A735A00" Ref="L81"  Part="1" 
+F 0 "L81" V 4050 4700 59  0000 L BNN
+F 1 "60/20/5" V 4250 4700 59  0000 L BNN
+F 2 "Copper Receiver Module:RESC0805_N" H 4100 4900 50  0001 C CNN
+F 3 "" H 4100 4900 50  0001 C CNN
+F 4 "MH2029-600YCT-ND" V 4100 4900 50  0001 C CNN "Vendor"
+	1    4100 4900
+	0    1    1    0   
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:C-USC1210 C78
+U 1 0 991C9C15
+P 5300 4300
+AR Path="/991C9C15" Ref="C78"  Part="1" 
+AR Path="/5A65636B/991C9C15" Ref="C78"  Part="1" 
+F 0 "C78" H 5340 4325 59  0000 L BNN
+F 1 "10uF" H 5340 4135 59  0000 L BNN
+F 2 "Capacitors_SMD:C_1210" H 5300 4300 50  0001 C CNN
+F 3 "" H 5300 4300 50  0001 C CNN
+F 4 "490-1867-1-ND" H 5300 4300 50  0001 C CNN "Vendor"
+	1    5300 4300
+	1    0    0    -1  
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:C-USC0805 C79
+U 1 0 503DB230
+P 4800 4300
+AR Path="/503DB230" Ref="C79"  Part="1" 
+AR Path="/5A65636B/503DB230" Ref="C79"  Part="1" 
+F 0 "C79" H 4840 4325 59  0001 L BNN
+F 1 "47uF" H 4840 4135 59  0001 L BNN
+F 2 "Capacitors_SMD:C_0805" H 4800 4300 50  0001 C CNN
+F 3 "" H 4800 4300 50  0001 C CNN
+F 4 "511-1682-1-ND" H 4800 4300 50  0001 C CNN "Vendor"
+	1    4800 4300
+	1    0    0    -1  
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:R-US_R0603 R61
+U 1 0 554C70AA
+P 8000 4600
+AR Path="/554C70AA" Ref="R61"  Part="1" 
+AR Path="/5A65636B/554C70AA" Ref="R61"  Part="1" 
+F 0 "R61" H 7850 4659 59  0000 L BNN
+F 1 "82K" H 7850 4470 59  0000 L BNN
+F 2 "Resistors_SMD:R_0603" H 8000 4600 50  0001 C CNN
+F 3 "" H 8000 4600 50  0001 C CNN
+F 4 "749-1684-1-ND" H 8000 4600 50  0001 C CNN "Vendor"
+	1    8000 4600
+	0    -1   -1   0   
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:C-USC0603 C62
+U 1 0 5C03F055
+P 8300 4600
+AR Path="/5C03F055" Ref="C62"  Part="1" 
+AR Path="/5A65636B/5C03F055" Ref="C62"  Part="1" 
+F 0 "C62" H 8340 4625 59  0000 L BNN
+F 1 "470nF" H 8340 4435 59  0000 L BNN
+F 2 "Capacitors_SMD:C_0603" H 8300 4600 50  0001 C CNN
+F 3 "" H 8300 4600 50  0001 C CNN
+F 4 "490-3291-1-ND" H 8300 4600 50  0001 C CNN "Vendor"
+	1    8300 4600
+	1    0    0    -1  
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:C-USC1210 C85
+U 1 0 2D7C5423
+P 5300 6000
+AR Path="/2D7C5423" Ref="C85"  Part="1" 
+AR Path="/5A65636B/2D7C5423" Ref="C85"  Part="1" 
+F 0 "C85" H 5340 6025 59  0000 L BNN
+F 1 "10uF" H 5340 5835 59  0000 L BNN
+F 2 "Capacitors_SMD:C_1210" H 5300 6000 50  0001 C CNN
+F 3 "" H 5300 6000 50  0001 C CNN
+F 4 "490-1867-1-ND" H 5300 6000 50  0001 C CNN "Vendor"
+	1    5300 6000
+	1    0    0    -1  
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:C-USC0805 C84
+U 1 0 E829B687
+P 4800 6000
+AR Path="/E829B687" Ref="C84"  Part="1" 
+AR Path="/5A65636B/E829B687" Ref="C84"  Part="1" 
+F 0 "C84" H 4840 6025 59  0001 L BNN
+F 1 "47uF" H 4840 5835 59  0001 L BNN
+F 2 "Capacitors_SMD:C_0805" H 4800 6000 50  0001 C CNN
+F 3 "" H 4800 6000 50  0001 C CNN
+F 4 "511-1682-1-ND" H 4800 6000 50  0001 C CNN "Vendor"
+	1    4800 6000
+	1    0    0    -1  
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:R-US_R0603 R60
+U 1 0 9F99CA3C
+P 8000 6300
+AR Path="/9F99CA3C" Ref="R60"  Part="1" 
+AR Path="/5A65636B/9F99CA3C" Ref="R60"  Part="1" 
+F 0 "R60" H 7850 6359 59  0000 L BNN
+F 1 "82K" H 7850 6170 59  0000 L BNN
+F 2 "Resistors_SMD:R_0603" H 8000 6300 50  0001 C CNN
+F 3 "" H 8000 6300 50  0001 C CNN
+F 4 "749-1684-1-ND" H 8000 6300 50  0001 C CNN "Vendor"
+	1    8000 6300
+	0    -1   -1   0   
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:C-USC0603 C59
+U 1 0 2966C7E3
+P 8300 6300
+AR Path="/2966C7E3" Ref="C59"  Part="1" 
+AR Path="/5A65636B/2966C7E3" Ref="C59"  Part="1" 
+F 0 "C59" H 8340 6325 59  0000 L BNN
+F 1 "470nF" H 8340 6135 59  0000 L BNN
+F 2 "Capacitors_SMD:C_0603" H 8300 6300 50  0001 C CNN
+F 3 "" H 8300 6300 50  0001 C CNN
+F 4 "490-3291-1-ND" H 8300 6300 50  0001 C CNN "Vendor"
+	1    8300 6300
+	1    0    0    -1  
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:INDUCTOR_0805_N L72
+U 1 0 0C15BC30
+P 4400 900
+AR Path="/0C15BC30" Ref="L72"  Part="1" 
+AR Path="/5A65636B/0C15BC30" Ref="L72"  Part="1" 
+F 0 "L72" V 4350 700 59  0000 L BNN
+F 1 "60/20/5" V 4550 700 59  0000 L BNN
+F 2 "Copper Receiver Module:RESC0805_N" H 4400 900 50  0001 C CNN
+F 3 "" H 4400 900 50  0001 C CNN
+F 4 "MH2029-600YCT-ND" V 4400 900 50  0001 C CNN "Vendor"
+	1    4400 900 
+	0    1    1    0   
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:INDUCTOR_0805_N L73
+U 1 0 87E3A92C
+P 4400 1900
+AR Path="/87E3A92C" Ref="L73"  Part="1" 
+AR Path="/5A65636B/87E3A92C" Ref="L73"  Part="1" 
+F 0 "L73" V 4350 1700 59  0000 L BNN
+F 1 "60/20/5" V 4550 1700 59  0000 L BNN
+F 2 "Copper Receiver Module:RESC0805_N" H 4400 1900 50  0001 C CNN
+F 3 "" H 4400 1900 50  0001 C CNN
+F 4 "MH2029-600YCT-ND" V 4400 1900 50  0001 C CNN "Vendor"
+	1    4400 1900
+	0    1    1    0   
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:JUMPER-SMT_2_NO_SILK JP72
+U 1 0 E79E7A9F
+P 4400 1300
+AR Path="/E79E7A9F" Ref="JP72"  Part="1" 
+AR Path="/5A65636B/E79E7A9F" Ref="JP72"  Part="1" 
+F 0 "JP72" H 4300 1400 70  0000 L BNN
+F 1 "JUMPER-SMT_2_NO_SILK" H 4300 1200 70  0000 L TNN
+F 2 "CustomParts:SOLDER-JUMPER_1-WAY" H 4400 1300 50  0001 C CNN
+F 3 "" H 4400 1300 50  0001 C CNN
+	1    4400 1300
+	1    0    0    -1  
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:JUMPER-SMT_2_NO_SILK JP73
+U 1 0 CB29AC1C
+P 4400 1700
+AR Path="/CB29AC1C" Ref="JP73"  Part="1" 
+AR Path="/5A65636B/CB29AC1C" Ref="JP73"  Part="1" 
+F 0 "JP73" H 4300 1800 70  0000 L BNN
+F 1 "JUMPER-SMT_2_NO_SILK" H 4300 1600 70  0000 L TNN
+F 2 "CustomParts:SOLDER-JUMPER_1-WAY" H 4400 1700 50  0001 C CNN
+F 3 "" H 4400 1700 50  0001 C CNN
+	1    4400 1700
+	1    0    0    -1  
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:JUMPER-SMT_2_NO_SILK JP80
+U 1 0 112DA085
+P 4100 4300
+AR Path="/112DA085" Ref="JP80"  Part="1" 
+AR Path="/5A65636B/112DA085" Ref="JP80"  Part="1" 
+F 0 "JP80" H 4000 4400 70  0000 L BNN
+F 1 "JUMPER-SMT_2_NO_SILK" H 4000 4200 70  0000 L TNN
+F 2 "CustomParts:SOLDER-JUMPER_1-WAY" H 4100 4300 50  0001 C CNN
+F 3 "" H 4100 4300 50  0001 C CNN
+	1    4100 4300
+	1    0    0    -1  
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:JUMPER-SMT_2_NO_SILK JP81
+U 1 0 BF6652E9
+P 4100 4700
+AR Path="/BF6652E9" Ref="JP81"  Part="1" 
+AR Path="/5A65636B/BF6652E9" Ref="JP81"  Part="1" 
+F 0 "JP81" H 4000 4800 70  0000 L BNN
+F 1 "JUMPER-SMT_2_NO_SILK" H 4000 4600 70  0000 L TNN
+F 2 "CustomParts:SOLDER-JUMPER_1-WAY" H 4100 4700 50  0001 C CNN
+F 3 "" H 4100 4700 50  0001 C CNN
+	1    4100 4700
+	1    0    0    -1  
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:JUMPER-SMT_2_NO_SILK JP82
+U 1 0 1A680108
+P 4100 6000
+AR Path="/1A680108" Ref="JP82"  Part="1" 
+AR Path="/5A65636B/1A680108" Ref="JP82"  Part="1" 
+F 0 "JP82" H 4000 6100 70  0000 L BNN
+F 1 "JUMPER-SMT_2_NO_SILK" H 4000 5900 70  0000 L TNN
+F 2 "CustomParts:SOLDER-JUMPER_1-WAY" H 4100 6000 50  0001 C CNN
+F 3 "" H 4100 6000 50  0001 C CNN
+	1    4100 6000
+	1    0    0    -1  
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:JUMPER-SMT_2_NO_SILK JP83
+U 1 0 649DC970
+P 4100 6300
+AR Path="/649DC970" Ref="JP83"  Part="1" 
+AR Path="/5A65636B/649DC970" Ref="JP83"  Part="1" 
+F 0 "JP83" H 4000 6400 70  0000 L BNN
+F 1 "JUMPER-SMT_2_NO_SILK" H 4000 6200 70  0000 L TNN
+F 2 "CustomParts:SOLDER-JUMPER_1-WAY" H 4100 6300 50  0001 C CNN
+F 3 "" H 4100 6300 50  0001 C CNN
+	1    4100 6300
+	1    0    0    -1  
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:R-US_R0603 R55
+U 1 0 04F233F4
+P 9800 2700
+AR Path="/04F233F4" Ref="R55"  Part="1" 
+AR Path="/5A65636B/04F233F4" Ref="R55"  Part="1" 
+F 0 "R55" H 9650 2759 59  0000 L BNN
+F 1 "10R" H 9650 2570 59  0000 L BNN
+F 2 "Resistors_SMD:R_0603" H 9800 2700 50  0001 C CNN
+F 3 "" H 9800 2700 50  0001 C CNN
+F 4 "MCT0603-10.0-CFCT-ND" H 9800 2700 50  0001 C CNN "Vendor"
+	1    9800 2700
+	0    -1   -1   0   
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:R-US_R0603 R54
+U 1 0 8EF28CBF
+P 9800 1200
+AR Path="/8EF28CBF" Ref="R54"  Part="1" 
+AR Path="/5A65636B/8EF28CBF" Ref="R54"  Part="1" 
+F 0 "R54" H 9650 1259 59  0000 L BNN
+F 1 "10R" H 9650 1070 59  0000 L BNN
+F 2 "Resistors_SMD:R_0603" H 9800 1200 50  0001 C CNN
+F 3 "" H 9800 1200 50  0001 C CNN
+F 4 "MCT0603-10.0-CFCT-ND" H 9800 1200 50  0001 C CNN "Vendor"
+	1    9800 1200
+	0    -1   -1   0   
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:R-US_R0603 R56
+U 1 0 CC43EF94
+P 9800 4300
+AR Path="/CC43EF94" Ref="R56"  Part="1" 
+AR Path="/5A65636B/CC43EF94" Ref="R56"  Part="1" 
+F 0 "R56" H 9650 4359 59  0000 L BNN
+F 1 "10R" H 9650 4170 59  0000 L BNN
+F 2 "Resistors_SMD:R_0603" H 9800 4300 50  0001 C CNN
+F 3 "" H 9800 4300 50  0001 C CNN
+F 4 "MCT0603-10.0-CFCT-ND" H 9800 4300 50  0001 C CNN "Vendor"
+	1    9800 4300
+	0    -1   -1   0   
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:R-US_R0603 R57
+U 1 0 1537757A
+P 9800 6200
+AR Path="/1537757A" Ref="R57"  Part="1" 
+AR Path="/5A65636B/1537757A" Ref="R57"  Part="1" 
+F 0 "R57" H 9650 6259 59  0000 L BNN
+F 1 "10R" H 9650 6070 59  0000 L BNN
+F 2 "Resistors_SMD:R_0603" H 9800 6200 50  0001 C CNN
+F 3 "" H 9800 6200 50  0001 C CNN
+F 4 "MCT0603-10.0-CFCT-ND" H 9800 6200 50  0001 C CNN "Vendor"
+	1    9800 6200
+	0    -1   -1   0   
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:R-US_R0603 R53
+U 1 0 A6CB1FF7
+P 2900 1200
+AR Path="/A6CB1FF7" Ref="R53"  Part="1" 
+AR Path="/5A65636B/A6CB1FF7" Ref="R53"  Part="1" 
+F 0 "R53" H 2750 1259 59  0000 L BNN
+F 1 "10R" H 2750 1070 59  0000 L BNN
+F 2 "Resistors_SMD:R_0603" H 2900 1200 50  0001 C CNN
+F 3 "" H 2900 1200 50  0001 C CNN
+F 4 "MCT0603-10.0-CFCT-ND" H 2900 1200 50  0001 C CNN "Vendor"
+	1    2900 1200
+	0    -1   -1   0   
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:C-USC0603 C69
+U 1 0 FE6C6763
+P 9000 1400
+AR Path="/FE6C6763" Ref="C69"  Part="1" 
+AR Path="/5A65636B/FE6C6763" Ref="C69"  Part="1" 
+F 0 "C69" H 9040 1425 59  0000 L BNN
+F 1 "10uF" H 9040 1235 59  0000 L BNN
+F 2 "Capacitors_SMD:C_1210" H 9000 1400 50  0001 C CNN
+F 3 "" H 9000 1400 50  0001 C CNN
+F 4 "490-1867-1-ND" H 9000 1400 50  0001 C CNN "Vendor"
+	1    9000 1400
+	1    0    0    -1  
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:C-USC0603 C63
+U 1 0 C1D2D1D6
+P 9000 4400
+AR Path="/C1D2D1D6" Ref="C63"  Part="1" 
+AR Path="/5A65636B/C1D2D1D6" Ref="C63"  Part="1" 
+F 0 "C63" H 9040 4425 59  0000 L BNN
+F 1 "10uF" H 9040 4235 59  0000 L BNN
+F 2 "Capacitors_SMD:C_1210" H 9000 4400 50  0001 C CNN
+F 3 "" H 9000 4400 50  0001 C CNN
+F 4 "490-1867-1-ND" H 9000 4400 50  0001 C CNN "Vendor"
+	1    9000 4400
+	1    0    0    -1  
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:C-USC0603 C58
+U 1 0 B846D7CA
+P 9000 6100
+AR Path="/B846D7CA" Ref="C58"  Part="1" 
+AR Path="/5A65636B/B846D7CA" Ref="C58"  Part="1" 
+F 0 "C58" H 9040 6125 59  0000 L BNN
+F 1 "10uF" H 9040 5935 59  0000 L BNN
+F 2 "Capacitors_SMD:C_1210" H 9000 6100 50  0001 C CNN
+F 3 "" H 9000 6100 50  0001 C CNN
+F 4 "490-1867-1-ND" H 9000 6100 50  0001 C CNN "Vendor"
+	1    9000 6100
+	1    0    0    -1  
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:C-USC0603 C52
+U 1 0 83E05615
+P 2600 6300
+AR Path="/83E05615" Ref="C52"  Part="1" 
+AR Path="/5A65636B/83E05615" Ref="C52"  Part="1" 
+F 0 "C52" H 2640 6325 59  0000 L BNN
+F 1 "1nF" H 2640 6135 59  0000 L BNN
+F 2 "Capacitors_SMD:C_0603" H 2600 6300 50  0001 C CNN
+F 3 "" H 2600 6300 50  0001 C CNN
+F 4 "490-1494-1-ND" H 2600 6300 50  0001 C CNN "Vendor"
+	1    2600 6300
+	1    0    0    -1  
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:C-USC0603 C51
+U 1 0 17D1E5E5
+P 2600 4600
+AR Path="/17D1E5E5" Ref="C51"  Part="1" 
+AR Path="/5A65636B/17D1E5E5" Ref="C51"  Part="1" 
+F 0 "C51" H 2640 4625 59  0000 L BNN
+F 1 "1nF" H 2640 4435 59  0000 L BNN
+F 2 "Capacitors_SMD:C_0603" H 2600 4600 50  0001 C CNN
+F 3 "" H 2600 4600 50  0001 C CNN
+F 4 "490-1494-1-ND" H 2600 4600 50  0001 C CNN "Vendor"
+	1    2600 4600
+	1    0    0    -1  
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:C-USC0603 C53
+U 1 0 B4F60367
+P 2900 1700
+AR Path="/B4F60367" Ref="C53"  Part="1" 
+AR Path="/5A65636B/B4F60367" Ref="C53"  Part="1" 
+F 0 "C53" H 2940 1725 59  0000 L BNN
+F 1 "1nF" H 2940 1535 59  0000 L BNN
+F 2 "Capacitors_SMD:C_0603" H 2900 1700 50  0001 C CNN
+F 3 "" H 2900 1700 50  0001 C CNN
+F 4 "490-1494-1-ND" H 2900 1700 50  0001 C CNN "Vendor"
+	1    2900 1700
+	1    0    0    -1  
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:C-USC0603 C54
+U 1 0 D8FEB937
+P 9800 1700
+AR Path="/D8FEB937" Ref="C54"  Part="1" 
+AR Path="/5A65636B/D8FEB937" Ref="C54"  Part="1" 
+F 0 "C54" H 9840 1725 59  0000 L BNN
+F 1 "1nF" H 9840 1535 59  0000 L BNN
+F 2 "Capacitors_SMD:C_0603" H 9800 1700 50  0001 C CNN
+F 3 "" H 9800 1700 50  0001 C CNN
+F 4 "490-1494-1-ND" H 9800 1700 50  0001 C CNN "Vendor"
+	1    9800 1700
+	1    0    0    -1  
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:C-USC0603 C55
+U 1 0 E0E0C520
+P 9800 3200
+AR Path="/E0E0C520" Ref="C55"  Part="1" 
+AR Path="/5A65636B/E0E0C520" Ref="C55"  Part="1" 
+F 0 "C55" H 9840 3225 59  0000 L BNN
+F 1 "1nF" H 9840 3035 59  0000 L BNN
+F 2 "Capacitors_SMD:C_0603" H 9800 3200 50  0001 C CNN
+F 3 "" H 9800 3200 50  0001 C CNN
+F 4 "490-1494-1-ND" H 9800 3200 50  0001 C CNN "Vendor"
+	1    9800 3200
+	1    0    0    -1  
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:C-USC0603 C56
+U 1 0 FEAD5438
+P 9800 4800
+AR Path="/FEAD5438" Ref="C56"  Part="1" 
+AR Path="/5A65636B/FEAD5438" Ref="C56"  Part="1" 
+F 0 "C56" H 9840 4825 59  0000 L BNN
+F 1 "1nF" H 9840 4635 59  0000 L BNN
+F 2 "Capacitors_SMD:C_0603" H 9800 4800 50  0001 C CNN
+F 3 "" H 9800 4800 50  0001 C CNN
+F 4 "490-1494-1-ND" H 9800 4800 50  0001 C CNN "Vendor"
+	1    9800 4800
+	1    0    0    -1  
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:C-USC0603 C57
+U 1 0 06AE8A59
+P 9800 5700
+AR Path="/06AE8A59" Ref="C57"  Part="1" 
+AR Path="/5A65636B/06AE8A59" Ref="C57"  Part="1" 
+F 0 "C57" H 9840 5725 59  0000 L BNN
+F 1 "1nF" H 9840 5535 59  0000 L BNN
+F 2 "Capacitors_SMD:C_0603" H 9800 5700 50  0001 C CNN
+F 3 "" H 9800 5700 50  0001 C CNN
+F 4 "490-1494-1-ND" H 9800 5700 50  0001 C CNN "Vendor"
+	1    9800 5700
+	-1   0    0    1   
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:LT3042 IC4
+U 1 0 AC4A21A9
+P 7000 2600
+AR Path="/AC4A21A9" Ref="IC4"  Part="1" 
+AR Path="/5A65636B/AC4A21A9" Ref="IC4"  Part="1" 
+F 0 "IC4" H 6700 2700 85  0000 L CNN
+F 1 "LT3042" H 6700 2500 85  0000 L CNN
+F 2 "Copper Receiver Module:MSOP-10_MSE" H 7000 2600 50  0001 C CNN
+F 3 "" H 7000 2600 50  0001 C CNN
+	1    7000 2600
+	1    0    0    -1  
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:R-US_R0603 RC66
+U 1 0 6A231A92
+P 8100 3100
+AR Path="/6A231A92" Ref="RC66"  Part="1" 
+AR Path="/5A65636B/6A231A92" Ref="R66"  Part="1" 
+F 0 "R66" H 7950 3159 59  0000 L BNN
+F 1 "33K" H 7950 2970 59  0000 L BNN
+F 2 "Resistors_SMD:R_0603" H 8100 3100 50  0001 C CNN
+F 3 "" H 8100 3100 50  0001 C CNN
+F 4 "MCT0603-33.0K-CFCT-ND" H 8100 3100 50  0001 C CNN "Vendor"
+	1    8100 3100
+	0    -1   -1   0   
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:C-USC0603 C65
+U 1 0 404AAEAB
+P 8400 3100
+AR Path="/404AAEAB" Ref="C65"  Part="1" 
+AR Path="/5A65636B/404AAEAB" Ref="C65"  Part="1" 
+F 0 "C65" H 8440 3125 59  0000 L BNN
+F 1 "470nF" H 8440 2935 59  0000 L BNN
+F 2 "Capacitors_SMD:C_0603" H 8400 3100 50  0001 C CNN
+F 3 "" H 8400 3100 50  0001 C CNN
+F 4 "490-3291-1-ND" H 8400 3100 50  0001 C CNN "Vendor"
+	1    8400 3100
+	1    0    0    -1  
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:C-USC1210 C77
+U 1 0 C62EE441
+P 5500 2800
+AR Path="/C62EE441" Ref="C77"  Part="1" 
+AR Path="/5A65636B/C62EE441" Ref="C77"  Part="1" 
+F 0 "C77" H 5540 2825 59  0000 L BNN
+F 1 "10uF" H 5540 2635 59  0000 L BNN
+F 2 "Capacitors_SMD:C_1210" H 5500 2800 50  0001 C CNN
+F 3 "" H 5500 2800 50  0001 C CNN
+F 4 "490-1867-1-ND" H 5500 2800 50  0001 C CNN "Vendor"
+	1    5500 2800
+	1    0    0    -1  
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:C-USC0805 C76
+U 1 0 DAD3F602
+P 5200 2800
+AR Path="/DAD3F602" Ref="C76"  Part="1" 
+AR Path="/5A65636B/DAD3F602" Ref="C76"  Part="1" 
+F 0 "C76" H 5240 2825 59  0001 L BNN
+F 1 "47uF" H 5240 2635 59  0001 L BNN
+F 2 "Capacitors_SMD:C_0805" H 5200 2800 50  0001 C CNN
+F 3 "" H 5200 2800 50  0001 C CNN
+F 4 "511-1682-1-ND" H 5200 2800 50  0001 C CNN "Vendor"
+	1    5200 2800
+	1    0    0    -1  
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:INDUCTOR_0805_N L74
+U 1 0 D1BAFAD5
+P 4400 2400
+AR Path="/D1BAFAD5" Ref="L74"  Part="1" 
+AR Path="/5A65636B/D1BAFAD5" Ref="L74"  Part="1" 
+F 0 "L74" V 4350 2200 59  0000 L BNN
+F 1 "60/20/5" V 4550 2200 59  0000 L BNN
+F 2 "Copper Receiver Module:RESC0805_N" H 4400 2400 50  0001 C CNN
+F 3 "" H 4400 2400 50  0001 C CNN
+F 4 "MH2029-600YCT-ND" V 4400 2400 50  0001 C CNN "Vendor"
+	1    4400 2400
+	0    1    1    0   
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:INDUCTOR_0805_N L75
+U 1 0 6B8935EE
+P 4400 3400
+AR Path="/6B8935EE" Ref="L75"  Part="1" 
+AR Path="/5A65636B/6B8935EE" Ref="L75"  Part="1" 
+F 0 "L75" V 4350 3200 59  0000 L BNN
+F 1 "60/20/5" V 4550 3200 59  0000 L BNN
+F 2 "Copper Receiver Module:RESC0805_N" H 4400 3400 50  0001 C CNN
+F 3 "" H 4400 3400 50  0001 C CNN
+F 4 "MH2029-600YCT-ND" V 4400 3400 50  0001 C CNN "Vendor"
+	1    4400 3400
+	0    1    1    0   
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:JUMPER-SMT_2_NO_SILK JP74
+U 1 0 3D18594C
+P 4400 2800
+AR Path="/3D18594C" Ref="JP74"  Part="1" 
+AR Path="/5A65636B/3D18594C" Ref="JP74"  Part="1" 
+F 0 "JP74" H 4300 2900 70  0000 L BNN
+F 1 "JUMPER-SMT_2_NO_SILK" H 4300 2700 70  0000 L TNN
+F 2 "CustomParts:SOLDER-JUMPER_1-WAY" H 4400 2800 50  0001 C CNN
+F 3 "" H 4400 2800 50  0001 C CNN
+	1    4400 2800
+	1    0    0    -1  
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:JUMPER-SMT_2_NO_SILK JP75
+U 1 0 C5F5467A
+P 4400 3200
+AR Path="/C5F5467A" Ref="JP75"  Part="1" 
+AR Path="/5A65636B/C5F5467A" Ref="JP75"  Part="1" 
+F 0 "JP75" H 4300 3300 70  0000 L BNN
+F 1 "JUMPER-SMT_2_NO_SILK" H 4300 3100 70  0000 L TNN
+F 2 "CustomParts:SOLDER-JUMPER_1-WAY" H 4400 3200 50  0001 C CNN
+F 3 "" H 4400 3200 50  0001 C CNN
+	1    4400 3200
+	1    0    0    -1  
+$EndComp
+$Comp
+L Copper~Receiver~Module-eagle-import:C-USC0603 C64
+U 1 0 9B558A0B
+P 9000 2900
+AR Path="/9B558A0B" Ref="C64"  Part="1" 
+AR Path="/5A65636B/9B558A0B" Ref="C64"  Part="1" 
+F 0 "C64" H 9040 2925 59  0000 L BNN
+F 1 "10uF" H 9040 2735 59  0000 L BNN
+F 2 "Capacitors_SMD:C_1210" H 9000 2900 50  0001 C CNN
+F 3 "" H 9000 2900 50  0001 C CNN
+F 4 "490-1867-1-ND" H 9000 2900 50  0001 C CNN "Vendor"
+	1    9000 2900
+	1    0    0    -1  
+$EndComp
+Text Notes 4300 7600 0    127  ~ 0
+Regulated DC Power
+$Comp
+L conn:Conn_01x01_Female 3V3_RCV1
+U 1 1 5A778489
+P 9500 800
+F 0 "3V3_RCV1" H 9527 826 50  0000 L CNN
+F 1 "Conn_01x01_Female" H 9527 735 50  0000 L CNN
+F 2 "CustomParts:SinglePad" H 9500 800 50  0001 C CNN
+F 3 "~" H 9500 800 50  0001 C CNN
+	1    9500 800 
+	1    0    0    -1  
+$EndComp
+$Comp
+L conn:Conn_01x01_Female 0V_RCV1
+U 1 1 5A778681
+P 9500 2050
+F 0 "0V_RCV1" H 9527 2076 50  0000 L CNN
+F 1 "Conn_01x01_Female" H 9527 1985 50  0000 L CNN
+F 2 "CustomParts:SinglePad" H 9500 2050 50  0001 C CNN
+F 3 "~" H 9500 2050 50  0001 C CNN
+	1    9500 2050
+	1    0    0    -1  
+$EndComp
+$Comp
+L conn:Conn_01x01_Female 3V3_ISO1
+U 1 1 5A778781
+P 9500 2350
+F 0 "3V3_ISO1" H 9527 2376 50  0000 L CNN
+F 1 "Conn_01x01_Female" H 9527 2285 50  0000 L CNN
+F 2 "CustomParts:SinglePad" H 9500 2350 50  0001 C CNN
+F 3 "~" H 9500 2350 50  0001 C CNN
+	1    9500 2350
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	9350 3550 9350 3400
+Connection ~ 9350 3400
+Wire Wire Line
+	9350 3400 9800 3400
+Wire Wire Line
+	9300 2350 9300 2500
+Connection ~ 9300 2500
+Wire Wire Line
+	9300 2500 9800 2500
+Wire Wire Line
+	9300 2050 9300 1900
+Connection ~ 9300 1900
+Wire Wire Line
+	9300 1900 9800 1900
+Wire Wire Line
+	9300 800  9300 1000
+Connection ~ 9300 1000
+Wire Wire Line
+	9300 1000 9800 1000
+NoConn ~ 1700 5000
+$Comp
+L conn:Conn_01x01_Female 0V_ISO1
+U 1 1 5AA26D08
+P 9550 3550
+F 0 "0V_ISO1" H 9577 3576 50  0000 L CNN
+F 1 "Conn_01x01_Female" H 9577 3485 50  0000 L CNN
+F 2 "CustomParts:SinglePad" H 9550 3550 50  0001 C CNN
+F 3 "~" H 9550 3550 50  0001 C CNN
+	1    9550 3550
+	1    0    0    -1  
+$EndComp
+$EndSCHEMATC

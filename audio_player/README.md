@@ -97,6 +97,26 @@ The code for crossover filters and de-emphasis filter was
 written by Leonard Manzara in C, and ported to C# by me.
 
 
+## DAC Receiver Board
+
+In the schematics directory is the design for the DAC
+receiver board.  That board is part of each amplifier and
+is responsible to receive the signals from the Logi-Pi
+board and use them to drive the D-to-A in the amplifier.
+It uses opto-isolators to keep any electrical noise from
+the Logi-Pi separate from the D-to-A.  It also has the
+voltage regulators necessary to provide power to the
+digital side of the D-to-A.
+
+The voltage regulators are chosen as LT3042 as those are
+considered to be some of the best regulators based on
+discussions at diyaudio.com.
+
+NOTE: The 47uF capacitors shown in the design are 6V
+tolerant but need to be 12V tolerant.  In the next revision
+we will need to use a larger footprint on the board to
+accommodate the correct capacitor.
+
 
 ## License
 

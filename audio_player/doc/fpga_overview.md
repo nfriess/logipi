@@ -102,7 +102,7 @@ makes this relatively easy to do.
 
 Meanwhile, one state machine in the DAC controller reads audio samples
 stored in 32-bit words in the FGPA's dual-port SRAM.  The samples are
-stored in 6 regsiters (one per channel) and then clocked out to the 6
+stored in 8 regsiters (one per channel) and then clocked out to the 6
 D-to-As.  Every time the reader state machine's read pointer crosses
 half of the SRAM addresses, it signals the second state machine to
 refill that half of the SRAM.

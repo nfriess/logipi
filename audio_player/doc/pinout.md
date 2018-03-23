@@ -42,19 +42,23 @@ bit and word clocks, for example.
 
 PMOD4:
 
-* Bit 0: Word Clock
+* Bit 0: Word Clock (Latch Enable)
 * Bit 1: Bit Clock
-* Bit 2: Left treble data
-* Bit 3: Right treble data
+* Bit 4: Mute (no data being output)
+* Bit 5: User Signal
+* Bit 6: Idle Signal
+* Bit 7: 0 when audio clk is not active
 
 PMOD3:
 
-* Bit 0: Inverted Word Clock
-* Bit 1: Inverted Bit Clock
-* Bit 4: Left mid-range data
-* Bit 5: Right mid-range data
-* Bit 6: Left bass data
-* Bit 7: Right bass data
+* Bit 0: Left woofer data
+* Bit 1: Right woofer data
+* Bit 2: Left low mid-range data
+* Bit 3: Right low mid-range data
+* Bit 4: Left high mid-range data
+* Bit 5: Right high mid-range data
+* Bit 6: Left tweeter data
+* Bit 7: Right tweeter data
 
 ## Raspberry Pi
 

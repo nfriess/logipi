@@ -17,7 +17,7 @@ up the board.
 
 Connect a Digilent PmodNIC100 to the Logi-Pi's PMOD1 port.
 
-Connect the 6 D-to-As to the various lines on the PMOD3 and
+Connect the 8 D-to-As to the various lines on the PMOD3 and
 PMOD4 ports.
 
 You can connect the Ethernet cable to the PmodNIC either
