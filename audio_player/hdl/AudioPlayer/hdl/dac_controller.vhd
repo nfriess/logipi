@@ -94,7 +94,7 @@ architecture Behavioral of dac_controller is
 	constant BITCLK_28M_48 : positive := 11;
 	
 	-- How many bitclks to wait before shifting in the MSB
-	constant MSBCOUNT_16M : positive := 2;
+	constant MSBCOUNT_16M : positive := 4;
 	constant MSBCOUNT_16M_EARLY : positive := 4;
 	constant MSBCOUNT_16M_MID : positive := 38;
 	constant MSBCOUNT_16M_LATE : positive := 72;
@@ -429,7 +429,7 @@ begin
 					dac_clk_lrclk <= LRCLK_16M;
 					dac_clk_bitclk <= BITCLK_16M;
 					dac_clk_msb <= MSBCOUNT_16M;
-					output_bitclk_msb <= ZERO_BITCLK_BEFORE_MSB;
+					output_bitclk_msb <= OUTPUT_BITCLK_BEFORE_MSB;
 				end if;
 			end if;
 		

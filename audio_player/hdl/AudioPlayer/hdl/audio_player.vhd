@@ -144,8 +144,12 @@ architecture Behavioral of audio_player is
 	
 	-- Signals from audio state machine to drive the DACs
 	signal dac_clk_oe : std_logic;
+	signal dac_bitclk : std_logic;
 	signal dac_bitclk_o : std_logic;
+	signal dac_bitclk_t : std_logic;
 	signal dac_lrclk_o : std_logic;
+	signal dac_lrclk_inv : std_logic;
+	signal dac_bitclk_inv : std_logic;
 	
 	signal dac_left_tweeter_data : std_logic;
 	signal dac_left_uppermid_data : std_logic;
@@ -155,6 +159,15 @@ architecture Behavioral of audio_player is
 	signal dac_right_uppermid_data : std_logic;
 	signal dac_right_lowmid_data : std_logic;
 	signal dac_right_woofer_data : std_logic;
+	
+	signal dac_left_tweeter_data_inv : std_logic;
+	signal dac_left_uppermid_data_inv : std_logic;
+	signal dac_left_lowmid_data_inv : std_logic;
+	signal dac_left_woofer_data_inv : std_logic;
+	signal dac_right_tweeter_data_inv : std_logic;
+	signal dac_right_uppermid_data_inv : std_logic;
+	signal dac_right_lowmid_data_inv : std_logic;
+	signal dac_right_woofer_data_inv : std_logic;
 	
 	signal volume_left_woofer : std_logic_vector(8 downto 0);
 	signal volume_left_lowmid : std_logic_vector(8 downto 0);
@@ -706,7 +719,7 @@ dac_controller : entity work.dac_controller
 		dac_clk_oe => dac_clk_oe,
 		audioclk => audioclk_selected,
 		
-		bitclk_o => dac_bitclk_o,
+		bitclk_o => dac_bitclk,
 		lrclk_o => dac_lrclk_o,
 		
 		dac_left_tweeter_o => dac_left_tweeter_data,
@@ -749,8 +762,176 @@ dac_controller : entity work.dac_controller
 	);
 
 
+dac_bitclk_inv <= not dac_bitclk;
+dac_lrclk_inv <= not dac_lrclk_o;
+
+dac_left_woofer_data_inv <= not dac_left_woofer_data;
+dac_right_woofer_data_inv <= not dac_right_woofer_data;
+dac_left_lowmid_data_inv <= not dac_left_lowmid_data;
+dac_right_lowmid_data_inv <= not dac_right_lowmid_data;
+dac_left_uppermid_data_inv <= not dac_left_uppermid_data;
+dac_right_uppermid_data_inv <= not dac_right_uppermid_data;
+dac_left_tweeter_data_inv <= not dac_left_tweeter_data;
+dac_right_tweeter_data_inv <= not dac_right_tweeter_data;
+
+
+-- Delay output bitclk by 1 cycle of 16m clk to correct
+-- some timing issues
+
+process (audioclk_selected)
+begin
+	if rising_edge(audioclk_selected) then
+		dac_bitclk_t <= dac_bitclk;
+		dac_bitclk_o <= dac_bitclk_t;
+	end if;
+end process;
+
+ODDR2_lrclk : ODDR2
+   generic map(
+      DDR_ALIGNMENT => "C1",
+      INIT => '0',
+      SRTYPE => "ASYNC")
+   port map (
+      Q => PMOD4(0),
+      C0 => dac_bitclk,
+      C1 => dac_bitclk_inv,
+      CE => '1',
+      D0 => dac_lrclk_inv,
+      D1 => dac_lrclk_o,
+      R => '0',
+      S => '0'
+   );
+
+ODDR2_data_left_woofer : ODDR2
+   generic map(
+      DDR_ALIGNMENT => "C1",
+      INIT => '0',
+      SRTYPE => "ASYNC")
+   port map (
+      Q => PMOD3(0),
+      C0 => dac_bitclk,
+      C1 => dac_bitclk_inv,
+      CE => '1',
+      D0 => dac_left_woofer_data_inv,
+      D1 => dac_left_woofer_data,
+      R => '0',
+      S => '0'
+   );
+
+ODDR2_data_right_woofer : ODDR2
+   generic map(
+      DDR_ALIGNMENT => "C1",
+      INIT => '0',
+      SRTYPE => "ASYNC")
+   port map (
+      Q => PMOD3(1),
+      C0 => dac_bitclk,
+      C1 => dac_bitclk_inv,
+      CE => '1',
+      D0 => dac_right_woofer_data_inv,
+      D1 => dac_right_woofer_data,
+      R => '0',
+      S => '0'
+   );
+
+ODDR2_data_left_lowmid : ODDR2
+   generic map(
+      DDR_ALIGNMENT => "C1",
+      INIT => '0',
+      SRTYPE => "ASYNC")
+   port map (
+      Q => PMOD3(2),
+      C0 => dac_bitclk,
+      C1 => dac_bitclk_inv,
+      CE => '1',
+      D0 => dac_left_lowmid_data_inv,
+      D1 => dac_left_lowmid_data,
+      R => '0',
+      S => '0'
+   );
+
+ODDR2_data_right_lowmid : ODDR2
+   generic map(
+      DDR_ALIGNMENT => "C1",
+      INIT => '0',
+      SRTYPE => "ASYNC")
+   port map (
+      Q => PMOD3(3),
+      C0 => dac_bitclk,
+      C1 => dac_bitclk_inv,
+      CE => '1',
+      D0 => dac_right_lowmid_data_inv,
+      D1 => dac_right_lowmid_data,
+      R => '0',
+      S => '0'
+   );
+
+ODDR2_data_left_uppermid : ODDR2
+   generic map(
+      DDR_ALIGNMENT => "C1",
+      INIT => '0',
+      SRTYPE => "ASYNC")
+   port map (
+      Q => PMOD3(4),
+      C0 => dac_bitclk,
+      C1 => dac_bitclk_inv,
+      CE => '1',
+      D0 => dac_left_uppermid_data_inv,
+      D1 => dac_left_uppermid_data,
+      R => '0',
+      S => '0'
+   );
+
+ODDR2_data_right_uppermid : ODDR2
+   generic map(
+      DDR_ALIGNMENT => "C1",
+      INIT => '0',
+      SRTYPE => "ASYNC")
+   port map (
+      Q => PMOD3(5),
+      C0 => dac_bitclk,
+      C1 => dac_bitclk_inv,
+      CE => '1',
+      D0 => dac_right_uppermid_data_inv,
+      D1 => dac_right_uppermid_data,
+      R => '0',
+      S => '0'
+   );
+
+ODDR2_data_left_tweeter : ODDR2
+   generic map(
+      DDR_ALIGNMENT => "C1",
+      INIT => '0',
+      SRTYPE => "ASYNC")
+   port map (
+      Q => PMOD3(6),
+      C0 => dac_bitclk,
+      C1 => dac_bitclk_inv,
+      CE => '1',
+      D0 => dac_left_tweeter_data_inv,
+      D1 => dac_left_tweeter_data,
+      R => '0',
+      S => '0'
+   );
+
+ODDR2_data_right_tweeter : ODDR2
+   generic map(
+      DDR_ALIGNMENT => "C1",
+      INIT => '0',
+      SRTYPE => "ASYNC")
+   port map (
+      Q => PMOD3(7),
+      C0 => dac_bitclk,
+      C1 => dac_bitclk_inv,
+      CE => '1',
+      D0 => dac_right_tweeter_data_inv,
+      D1 => dac_right_tweeter_data,
+      R => '0',
+      S => '0'
+   );
+
 -- Connecting signals to ports
-PMOD4(0) <= dac_lrclk_o;
+PMOD2(0) <= dac_lrclk_o;
 PMOD4(1) <= dac_bitclk_o;
 
 PMOD4(4) <= dac_mute;
@@ -758,14 +939,14 @@ PMOD4(5) <= user_sig;
 PMOD4(6) <= idle_sig;
 PMOD4(7) <= not audioclk_warning_o;
 
-PMOD3(0) <= dac_left_woofer_data;
-PMOD3(1) <= dac_right_woofer_data;
-PMOD3(2) <= dac_left_lowmid_data;
-PMOD3(3) <= dac_right_lowmid_data;
-PMOD3(4) <= dac_left_uppermid_data;
-PMOD3(5) <= dac_right_uppermid_data;
-PMOD3(6) <= dac_left_tweeter_data;
-PMOD3(7) <= dac_right_tweeter_data;
+--PMOD3(0) <= dac_left_woofer_data;
+--PMOD3(1) <= dac_right_woofer_data;
+--PMOD3(2) <= dac_left_lowmid_data;
+--PMOD3(3) <= dac_right_lowmid_data;
+--PMOD3(4) <= dac_left_uppermid_data;
+--PMOD3(5) <= dac_right_uppermid_data;
+--PMOD3(6) <= dac_left_tweeter_data;
+--PMOD3(7) <= dac_right_tweeter_data;
 
 -- PMOD1_10_ARD_D5
 BUFG_16m : BUFG port map (O => audioclk,    I => PMOD1(7));
