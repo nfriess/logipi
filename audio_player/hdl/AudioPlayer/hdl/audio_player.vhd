@@ -144,7 +144,9 @@ architecture Behavioral of audio_player is
 	
 	-- Signals from audio state machine to drive the DACs
 	signal dac_clk_oe : std_logic;
+	signal dac_bitclk : std_logic;
 	signal dac_bitclk_o : std_logic;
+	signal dac_bitclk_t : std_logic;
 	signal dac_lrclk_o : std_logic;
 	
 	signal dac_left_tweeter_data : std_logic;
@@ -706,7 +708,7 @@ dac_controller : entity work.dac_controller
 		dac_clk_oe => dac_clk_oe,
 		audioclk => audioclk_selected,
 		
-		bitclk_o => dac_bitclk_o,
+		bitclk_o => dac_bitclk,
 		lrclk_o => dac_lrclk_o,
 		
 		dac_left_tweeter_o => dac_left_tweeter_data,
@@ -747,6 +749,20 @@ dac_controller : entity work.dac_controller
 		dbg_sram_read_addr => dbg_sram_read_addr,
 		dbg_sram_write_addr => dbg_sram_write_addr
 	);
+
+
+
+-- Delay output bitclk by 1 cycle of 16m clk to correct
+-- some timing issues
+
+process (audioclk_selected)
+begin
+	if rising_edge(audioclk_selected) then
+		dac_bitclk_t <= dac_bitclk;
+		dac_bitclk_o <= dac_bitclk_t;
+	end if;
+end process;
+
 
 
 -- Connecting signals to ports
