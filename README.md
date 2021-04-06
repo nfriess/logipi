@@ -7,13 +7,16 @@ http://valentfx.com/logi-pi/
 ## Projects
 
 - **audio_player**: A basic implementation to stream hifi
-  audio from a host PC to a logipi that drives 6 D-to-As.
+  audio from a host PC to a logipi that drives 8 D-to-As.
 
 - **flash_loader**: A utility to load .bit files on the flash
   chip, or read data from the flash chip.
 
 - **i2cslave**: An I2C slave device that can communicate with
   the Raspberry Pi, implementing a wishbone master in VHDL.
+
+- **pi_audio_player**: Playing hifi audio from the Raspberry Pi,
+  replacing the audio_player setup with C# and Ethernet.
 
 - **spislave**: An SPI slave device that can communicate with
   the Raspberry Pi, implementing a wishbone master in VHDL.
